@@ -12,8 +12,8 @@
 
 import { test, mock } from "node:test";
 import assert from "node:assert";
-import { Request, Response, NextFunction } from "express";
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { Request, Response } from "express";
+import { Connection, Keypair } from "@solana/web3.js";
 import nacl from "tweetnacl";
 import { AgentKey } from "@meter/shared-types";
 import { createX402Middleware, MiddlewareOptions } from "./createX402Middleware.js";
