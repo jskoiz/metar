@@ -41,7 +41,7 @@ interface FacilitatorVerifyResponse {
  *
  * @see {@link file://research/x402-facilitator-pattern.md | Facilitator Pattern}
  */
-async function verifyPaymentViaFacilitator(
+export async function verifyPaymentViaFacilitator(
   facilitatorUrl: string,
   txSig: string,
   routeId: string,
@@ -68,7 +68,7 @@ async function verifyPaymentViaFacilitator(
       return false;
     }
 
-    const result: FacilitatorVerifyResponse = await response.json();
+    const result = (await response.json()) as FacilitatorVerifyResponse;
     return result.verified === true;
   } catch (error) {
     console.error("Facilitator verification error:", error);
@@ -313,7 +313,13 @@ export function createX402Middleware(options: MiddlewareOptions) {
       console.error("x402 middleware error:", error);
       const routeId = parsePaymentHeaders(req)?.routeId;
       const routeConfig = routeId ? getRouteConfig(options, routeId) : null;
-      return send402Response(res, options, routeId, "Internal error", routeConfig || undefined);
+      if (routeId && routeConfig) {
+        return send402Response(res, options, routeId, "Internal error", routeConfig);
+      } else if (routeId) {
+        return send402Response(res, options, routeId, "Internal error");
+      } else {
+        return send402Response(res, options, "Internal error");
+      }
     }
   };
 }

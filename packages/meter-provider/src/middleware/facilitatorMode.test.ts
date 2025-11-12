@@ -16,7 +16,7 @@ import { Request, Response } from "express";
 import { Connection, Keypair } from "@solana/web3.js";
 import nacl from "tweetnacl";
 import { AgentKey } from "@meter/shared-types";
-import { createX402Middleware, MiddlewareOptions } from "./createX402Middleware.js";
+import { createX402Middleware, MiddlewareOptions, verifyPaymentViaFacilitator } from "./createX402Middleware.js";
 import { AgentKeyRegistry } from "../verification/tap.js";
 import { createConnection, getUSDCMint } from "@meter/shared-config";
 
@@ -65,6 +65,113 @@ function createSignedRequest(
 
 // Mock fetch for facilitator calls
 const originalFetch = global.fetch;
+
+test("verifyPaymentViaFacilitator - returns true when facilitator verifies payment", async () => {
+  const facilitatorUrl = "https://facilitator.example.com";
+  
+  global.fetch = mock.fn(async (url: string, options?: RequestInit) => {
+    if (url.includes("/verify")) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          status: "ok",
+          verified: true,
+          payer: "7xKXtg2CZ3Qz4qKzJqKzJqKzJqKzJqKzJqKzJqKzJqKz",
+          timestamp: Date.now(),
+        }),
+      } as Response;
+    }
+    return originalFetch(url, options);
+  }) as any;
+
+  const result = await verifyPaymentViaFacilitator(
+    facilitatorUrl,
+    "test-tx-sig",
+    "test:v1",
+    0.01
+  );
+
+  assert.strictEqual(result, true);
+  global.fetch = originalFetch;
+});
+
+test("verifyPaymentViaFacilitator - returns false when facilitator rejects payment", async () => {
+  const facilitatorUrl = "https://facilitator.example.com";
+  
+  global.fetch = mock.fn(async (url: string, options?: RequestInit) => {
+    if (url.includes("/verify")) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          status: "ok",
+          verified: false,
+        }),
+      } as Response;
+    }
+    return originalFetch(url, options);
+  }) as any;
+
+  const result = await verifyPaymentViaFacilitator(
+    facilitatorUrl,
+    "test-tx-sig",
+    "test:v1",
+    0.01
+  );
+
+  assert.strictEqual(result, false);
+  global.fetch = originalFetch;
+});
+
+test("verifyPaymentViaFacilitator - returns false when facilitator service is unavailable", async () => {
+  const facilitatorUrl = "https://facilitator.example.com";
+  
+  global.fetch = mock.fn(async () => {
+    throw new Error("Network error");
+  }) as any;
+
+  const result = await verifyPaymentViaFacilitator(
+    facilitatorUrl,
+    "test-tx-sig",
+    "test:v1",
+    0.01
+  );
+
+  assert.strictEqual(result, false);
+  global.fetch = originalFetch;
+});
+
+test("verifyPaymentViaFacilitator - handles facilitator URL with trailing slash", async () => {
+  const facilitatorUrl = "https://facilitator.example.com/";
+  let calledUrl = "";
+  
+  global.fetch = mock.fn(async (url: string, options?: RequestInit) => {
+    if (url.includes("/verify")) {
+      calledUrl = url;
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          status: "ok",
+          verified: true,
+        }),
+      } as Response;
+    }
+    return originalFetch(url, options);
+  }) as any;
+
+  await verifyPaymentViaFacilitator(
+    facilitatorUrl,
+    "test-tx-sig",
+    "test:v1",
+    0.01
+  );
+
+  assert.ok(calledUrl.includes("/verify"));
+  assert.ok(!calledUrl.includes("//verify"), "URL should not have double slash");
+  global.fetch = originalFetch;
+});
 
 test("createX402Middleware - uses facilitator when facilitatorMode is enabled", async () => {
   const connection = createConnection("devnet");
