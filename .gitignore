@@ -46,7 +46,3 @@ coverage/
 # yarn.lock
 # pnpm-lock.yaml
 
-# Documentation directories
-hackathon/
-research/
-
