@@ -7,4 +7,5 @@ export * from "./signature";
 export * from "./fetch";
 export * from "./price";
 export * from "./MeterClient";
+export * from "./errors";
 
