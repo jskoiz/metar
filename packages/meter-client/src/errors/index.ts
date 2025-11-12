@@ -107,7 +107,7 @@ export async function parse402Response(response: Response): Promise<never> {
   }
 
   let paymentDetails: PaymentRequiredResponse;
-  
+
   try {
     const contentType = response.headers.get("content-type");
     if (contentType?.includes("application/json")) {
@@ -244,4 +244,3 @@ export async function parsePaymentError(error: unknown): Promise<PaymentError> {
     originalErrorType: error instanceof Error ? error.constructor.name : typeof error,
   });
 }
-
