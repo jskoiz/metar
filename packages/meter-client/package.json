@@ -8,7 +8,15 @@
     "build:watch": "tsup --watch",
     "clean": "rm -rf dist"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@solana/web3.js": "^1.87.6",
+    "@solana/spl-token": "^0.4.1",
+    "tweetnacl": "^1.0.3",
+    "uuid": "^9.0.1"
+  },
+  "peerDependencies": {
+    "@solana/wallet-adapter-base": "^0.9.23"
+  },
   "devDependencies": {
     "tsup": "^8.0.0",
     "typescript": "^5.3.2"
