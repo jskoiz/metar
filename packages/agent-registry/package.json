@@ -6,14 +6,18 @@
   "scripts": {
     "build": "tsup",
     "build:watch": "tsup --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "tsx src/priceService.test.ts && tsx src/priceEndpoint.test.ts"
   },
   "dependencies": {
+    "@meter/shared-config": "*",
+    "@meter/shared-types": "*",
     "express": "^4.18.2"
   },
   "devDependencies": {
+    "@types/express": "^4.17.21",
     "tsup": "^8.0.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.2"
   }
 }
-
