@@ -23,7 +23,7 @@ export interface AgentKeyRegistry {
  */
 export function reconstructSignatureBaseString(
   req: Request,
-  authParams: { headers: string[] }
+  _authParams: { headers: string[] }
 ): string {
   const method = req.method.toLowerCase();
   const path = req.path + (req.query ? `?${new URLSearchParams(req.query as any).toString()}` : "");

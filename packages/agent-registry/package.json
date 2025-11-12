@@ -7,7 +7,7 @@
     "build": "tsup",
     "build:watch": "tsup --watch",
     "clean": "rm -rf dist",
-    "test": "tsx src/registry.test.ts"
+    "test": "tsx src/priceService.test.ts && tsx src/priceEndpoint.test.ts"
   },
   "dependencies": {
     "@meter/shared-config": "*",
