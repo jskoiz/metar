@@ -69,10 +69,14 @@ export async function checkNonce(
  */
 function cleanupNonces() {
   const oneHourAgo = Date.now() - 3600000;
-  for (const [key, value] of nonceStore.entries()) {
+  const keysToDelete: string[] = [];
+  
+  nonceStore.forEach((value, key) => {
     if (value.timestamp < oneHourAgo) {
-      nonceStore.delete(key);
+      keysToDelete.push(key);
     }
-  }
+  });
+  
+  keysToDelete.forEach(key => nonceStore.delete(key));
 }
 
