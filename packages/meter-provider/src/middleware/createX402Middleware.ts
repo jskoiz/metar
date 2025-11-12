@@ -9,11 +9,12 @@
 
 import express from "express";
 import { Connection, PublicKey } from "@solana/web3.js";
-import { PaymentHeaders, PaymentRequiredResponse } from "@meter/shared-types";
+import { PaymentHeaders } from "@meter/shared-types";
 import { parsePaymentHeaders } from "../verification/parseHeaders.js";
 import { validateTimestamp, checkNonce } from "../verification/validate.js";
 import { verifyAgentSignature, AgentKeyRegistry } from "../verification/tap.js";
 import { verifyPayment } from "../verification/payment.js";
+import { send402Response } from "./send402Response.js";
 
 /**
  * Options for configuring the x402 middleware.
@@ -39,40 +40,6 @@ export interface MiddlewareOptions {
   isTransactionUsed?: (txSig: string) => Promise<boolean>;
   /** Optional function to log payment usage */
   logUsage?: (headers: PaymentHeaders) => Promise<void>;
-}
-
-/**
- * Sends a 402 Payment Required response.
- * 
- * Formats and sends a standard 402 response with payment instructions
- * when payment verification fails or is missing.
- * 
- * @param res - Express response object
- * @param options - Middleware options containing payment details
- * @param message - Optional error message
- */
-function send402Response(
-  res: express.Response,
-  options: MiddlewareOptions,
-  message?: string
-): void {
-  const response: PaymentRequiredResponse = {
-    error: "Payment Required",
-    route: options.routeId,
-    amount: options.price,
-    currency: "USDC",
-    payTo: options.payTo,
-    mint: options.tokenMint,
-    chain: options.chain,
-    message: message || "Payment required to access this resource",
-    tips: [
-      "Make a USDC transfer to the payTo address",
-      "Include the transaction signature in x-meter-tx header",
-      "Include route, amount, and nonce in headers",
-    ],
-  };
-
-  res.status(402).json(response);
 }
 
 /**
