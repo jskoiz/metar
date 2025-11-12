@@ -21,6 +21,15 @@ prices.set("summarize:v1", {
   chain: "solana-devnet",
 });
 
+prices.set("resize-image:v1", {
+  price: 0.05,
+  currency: "USDC",
+  mint: getUSDCMint("devnet").toString(),
+  payTo: "7xKXtg2CZ3Qz4qKzJqKzJqKzJqKzJqKzJqKzJqKzJqKz", // Example
+  routeId: "resize-image:v1",
+  chain: "solana-devnet",
+});
+
 /**
  * Retrieves the price for a given route identifier.
  * 

@@ -17,21 +17,41 @@ import { verifyPayment } from "../verification/payment.js";
 import { send402Response } from "./send402Response.js";
 
 /**
- * Options for configuring the x402 middleware.
+ * Route-specific pricing configuration.
  */
-export interface MiddlewareOptions {
-  /** Route identifier (e.g., "summarize:v1") */
-  routeId: string;
+export interface RoutePricingConfig {
   /** Payment price in token units (e.g., 0.03 for 0.03 USDC) */
   price: number;
   /** Token mint address (e.g., USDC mint) */
   tokenMint: string;
   /** Provider wallet address to receive payment */
   payTo: string;
-  /** Optional agent registry URL (for future use) */
-  agentRegistryURL?: string;
   /** Blockchain network identifier */
   chain: "solana" | "solana-devnet";
+}
+
+/**
+ * Options for configuring the x402 middleware.
+ * 
+ * Supports two modes:
+ * 1. Single route mode: Provide routeId, price, tokenMint, payTo, chain
+ * 2. Multi-route mode: Provide routes map with route-specific pricing configs
+ */
+export interface MiddlewareOptions {
+  /** Route identifier (e.g., "summarize:v1") - required for single route mode */
+  routeId?: string;
+  /** Payment price in token units (e.g., 0.03 for 0.03 USDC) - required for single route mode */
+  price?: number;
+  /** Token mint address (e.g., USDC mint) - required for single route mode */
+  tokenMint?: string;
+  /** Provider wallet address to receive payment - required for single route mode */
+  payTo?: string;
+  /** Blockchain network identifier - required for single route mode */
+  chain?: "solana" | "solana-devnet";
+  /** Route-specific pricing configurations - required for multi-route mode */
+  routes?: Map<string, RoutePricingConfig> | Record<string, RoutePricingConfig>;
+  /** Optional agent registry URL (for future use) */
+  agentRegistryURL?: string;
   /** Solana connection instance */
   connection: Connection;
   /** Agent key registry for looking up agent public keys */
@@ -90,6 +110,40 @@ export interface MiddlewareOptions {
  * );
  * ```
  */
+/**
+ * Gets route pricing config from options based on routeId.
+ */
+function getRouteConfig(
+  options: MiddlewareOptions,
+  routeId: string
+): RoutePricingConfig | null {
+  // Multi-route mode: look up from routes map
+  if (options.routes) {
+    const routesMap = options.routes instanceof Map
+      ? options.routes
+      : new Map(Object.entries(options.routes));
+    const config = routesMap.get(routeId);
+    if (config) {
+      return config;
+    }
+    return null;
+  }
+
+  // Single route mode: use direct options if routeId matches
+  if (options.routeId && options.routeId === routeId) {
+    if (options.price !== undefined && options.tokenMint && options.payTo && options.chain) {
+      return {
+        price: options.price,
+        tokenMint: options.tokenMint,
+        payTo: options.payTo,
+        chain: options.chain,
+      };
+    }
+  }
+
+  return null;
+}
+
 export function createX402Middleware(options: MiddlewareOptions) {
   return async function x402Middleware(
     req: express.Request,
@@ -103,14 +157,20 @@ export function createX402Middleware(options: MiddlewareOptions) {
         return send402Response(res, options);
       }
 
+      // Get route-specific pricing config
+      const routeConfig = getRouteConfig(options, paymentHeaders.routeId);
+      if (!routeConfig) {
+        return send402Response(res, options, paymentHeaders.routeId, "Route not found");
+      }
+
       // 2. Verify timestamp
       if (!validateTimestamp(paymentHeaders.timestamp)) {
-        return send402Response(res, options, "Request expired");
+        return send402Response(res, options, paymentHeaders.routeId, "Request expired", routeConfig);
       }
 
       // 3. Verify nonce
       if (!(await checkNonce(paymentHeaders.nonce, paymentHeaders.agentKeyId))) {
-        return send402Response(res, options, "Invalid or reused nonce");
+        return send402Response(res, options, paymentHeaders.routeId, "Invalid or reused nonce", routeConfig);
       }
 
       // 4. Verify agent signature
@@ -121,23 +181,23 @@ export function createX402Middleware(options: MiddlewareOptions) {
           options.agentRegistry
         ))
       ) {
-        return send402Response(res, options, "Invalid agent signature");
+        return send402Response(res, options, paymentHeaders.routeId, "Invalid agent signature", routeConfig);
       }
 
       // 5. Verify payment
-      const expectedMint = new PublicKey(options.tokenMint);
-      const expectedPayTo = new PublicKey(options.payTo);
+      const expectedMint = new PublicKey(routeConfig.tokenMint);
+      const expectedPayTo = new PublicKey(routeConfig.payTo);
       if (
         !(await verifyPayment(
           options.connection,
           paymentHeaders.txSig,
           expectedMint,
           expectedPayTo,
-          options.price,
+          routeConfig.price,
           paymentHeaders
         ))
       ) {
-        return send402Response(res, options, "Payment verification failed");
+        return send402Response(res, options, paymentHeaders.routeId, "Payment verification failed", routeConfig);
       }
 
       // 6. Check idempotency
@@ -145,7 +205,7 @@ export function createX402Middleware(options: MiddlewareOptions) {
         options.isTransactionUsed &&
         (await options.isTransactionUsed(paymentHeaders.txSig))
       ) {
-        return send402Response(res, options, "Transaction already used");
+        return send402Response(res, options, paymentHeaders.routeId, "Transaction already used", routeConfig);
       }
 
       // 7. Log usage
@@ -159,7 +219,9 @@ export function createX402Middleware(options: MiddlewareOptions) {
       next();
     } catch (error) {
       console.error("x402 middleware error:", error);
-      return send402Response(res, options, "Internal error");
+      const routeId = parsePaymentHeaders(req)?.routeId;
+      const routeConfig = routeId ? getRouteConfig(options, routeId) : null;
+      return send402Response(res, options, routeId, "Internal error", routeConfig || undefined);
     }
   };
 }

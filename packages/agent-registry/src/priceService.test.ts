@@ -103,6 +103,21 @@ test("getAllRouteIds - includes newly added routes", () => {
   removePrice("new-route:v1");
 });
 
+test("getPrice - returns price for resize-image:v1 route", () => {
+  const price = getPrice("resize-image:v1");
+  assert.ok(price !== null);
+  assert.strictEqual(price.routeId, "resize-image:v1");
+  assert.strictEqual(price.price, 0.05);
+  assert.strictEqual(price.currency, "USDC");
+  assert.strictEqual(price.chain, "solana-devnet");
+});
+
+test("getAllRouteIds - includes both summarize:v1 and resize-image:v1", () => {
+  const routeIds = getAllRouteIds();
+  assert.ok(routeIds.includes("summarize:v1"));
+  assert.ok(routeIds.includes("resize-image:v1"));
+});
+
 test("getPrice - validates PriceResponse structure", () => {
   const price = getPrice("summarize:v1");
   assert.ok(price !== null);
