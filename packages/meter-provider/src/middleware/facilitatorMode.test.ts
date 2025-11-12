@@ -12,7 +12,7 @@
 
 import { test, mock } from "node:test";
 import assert from "node:assert";
-import { Request, Response as ExpressResponse } from "express";
+import { Request, Response } from "express";
 import { Connection, Keypair } from "@solana/web3.js";
 import nacl from "tweetnacl";
 import { AgentKey } from "@meter/shared-types";
@@ -41,15 +41,11 @@ function createSignedRequest(
   keypair: nacl.SignKeyPair,
   keyId: string
 ): Request {
-  const date = headers.date || new Date().toUTCString();
-  const nonce = headers["x-meter-nonce"];
-  const txSig = headers["x-meter-tx"];
-  
   const baseString = [
     `(request-target): ${method.toLowerCase()} ${path}`,
-    `date: ${date}`,
-    `x-meter-nonce: ${nonce}`,
-    `x-meter-tx: ${txSig}`,
+    `date: ${headers.date || new Date().toUTCString()}`,
+    `x-meter-nonce: ${headers["x-meter-nonce"]}`,
+    `x-meter-tx: ${headers["x-meter-tx"]}`,
   ].join("\n");
 
   const message = new TextEncoder().encode(baseString);
@@ -62,7 +58,6 @@ function createSignedRequest(
     query: {},
     headers: {
       ...headers,
-      date,
       authorization: `Signature keyId="${keyId}", alg="ed25519", headers="(request-target) date x-meter-nonce x-meter-tx", signature="${signatureBase64}"`,
     },
   } as Request;
@@ -255,7 +250,7 @@ test("createX402Middleware - uses facilitator when facilitatorMode is enabled", 
         },
       };
     },
-  } as ExpressResponse;
+  } as Response;
 
   const middleware = createX402Middleware(options);
   await middleware(req, res, () => {});
@@ -343,7 +338,7 @@ test("createX402Middleware - falls back to direct verification when facilitator 
         },
       };
     },
-  } as ExpressResponse;
+  } as Response;
 
   const middleware = createX402Middleware(options);
   await middleware(req, res, () => {});
@@ -425,7 +420,7 @@ test("createX402Middleware - falls back to direct verification when facilitator 
         },
       };
     },
-  } as ExpressResponse;
+  } as Response;
 
   const middleware = createX402Middleware(options);
   await middleware(req, res, () => {});
@@ -506,7 +501,7 @@ test("createX402Middleware - uses direct verification when facilitatorMode is di
         },
       };
     },
-  } as ExpressResponse;
+  } as Response;
 
   const middleware = createX402Middleware(options);
   await middleware(req, res, () => {});
@@ -586,7 +581,7 @@ test("createX402Middleware - uses direct verification when facilitatorMode is un
         },
       };
     },
-  } as ExpressResponse;
+  } as Response;
 
   const middleware = createX402Middleware(options);
   await middleware(req, res, () => {});
@@ -665,7 +660,7 @@ test("createX402Middleware - uses direct verification when facilitatorUrl is mis
         },
       };
     },
-  } as ExpressResponse;
+  } as Response;
 
   const middleware = createX402Middleware(options);
   await middleware(req, res, () => {});

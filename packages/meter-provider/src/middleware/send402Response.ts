@@ -113,4 +113,3 @@ export function send402Response(
 
   res.status(402).json(response);
 }
-

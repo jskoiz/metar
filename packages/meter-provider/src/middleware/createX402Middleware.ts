@@ -17,20 +17,6 @@ import { verifyPayment } from "../verification/payment.js";
 import { send402Response } from "./send402Response.js";
 
 /**
- * Route-specific pricing configuration.
- */
-export interface RoutePricingConfig {
-  /** Payment price in token units (e.g., 0.03 for 0.03 USDC) */
-  price: number;
-  /** Token mint address (e.g., USDC mint) */
-  tokenMint: string;
-  /** Provider wallet address to receive payment */
-  payTo: string;
-  /** Blockchain network identifier */
-  chain: "solana" | "solana-devnet";
-}
-
-/**
  * Facilitator verification response structure.
  */
 interface FacilitatorVerifyResponse {
@@ -43,16 +29,16 @@ interface FacilitatorVerifyResponse {
 
 /**
  * Verifies payment via facilitator service.
- * 
+ *
  * Calls the facilitator's /verify endpoint to check if a payment transaction
  * is valid. This abstracts the complexity of on-chain verification.
- * 
+ *
  * @param facilitatorUrl - Base URL of the facilitator service
  * @param txSig - Transaction signature to verify
  * @param routeId - Route identifier
  * @param amount - Payment amount
  * @returns Promise that resolves to true if payment is verified, false otherwise
- * 
+ *
  * @see {@link file://research/x402-facilitator-pattern.md | Facilitator Pattern}
  */
 export async function verifyPaymentViaFacilitator(
@@ -82,12 +68,26 @@ export async function verifyPaymentViaFacilitator(
       return false;
     }
 
-    const result: FacilitatorVerifyResponse = await response.json();
+    const result = (await response.json()) as FacilitatorVerifyResponse;
     return result.verified === true;
   } catch (error) {
     console.error("Facilitator verification error:", error);
     return false;
   }
+}
+
+/**
+ * Route-specific pricing configuration.
+ */
+export interface RoutePricingConfig {
+  /** Payment price in token units (e.g., 0.03 for 0.03 USDC) */
+  price: number;
+  /** Token mint address (e.g., USDC mint) */
+  tokenMint: string;
+  /** Provider wallet address to receive payment */
+  payTo: string;
+  /** Blockchain network identifier */
+  chain: "solana" | "solana-devnet";
 }
 
 /**
@@ -250,7 +250,7 @@ export function createX402Middleware(options: MiddlewareOptions) {
 
       // 5. Verify payment
       let paymentVerified = false;
-      
+
       if (options.facilitatorMode && options.facilitatorUrl) {
         // Use facilitator for verification
         paymentVerified = await verifyPaymentViaFacilitator(
@@ -259,7 +259,7 @@ export function createX402Middleware(options: MiddlewareOptions) {
           paymentHeaders.routeId,
           paymentHeaders.amount
         );
-        
+
         // Fallback to direct verification if facilitator fails
         if (!paymentVerified) {
           console.warn("Facilitator verification failed, falling back to direct verification");
@@ -287,7 +287,7 @@ export function createX402Middleware(options: MiddlewareOptions) {
           paymentHeaders
         );
       }
-      
+
       if (!paymentVerified) {
         return send402Response(res, options, paymentHeaders.routeId, "Payment verification failed", routeConfig);
       }
@@ -313,7 +313,13 @@ export function createX402Middleware(options: MiddlewareOptions) {
       console.error("x402 middleware error:", error);
       const routeId = parsePaymentHeaders(req)?.routeId;
       const routeConfig = routeId ? getRouteConfig(options, routeId) : null;
-      return send402Response(res, options, routeId, "Internal error", routeConfig || undefined);
+      if (routeId && routeConfig) {
+        return send402Response(res, options, routeId, "Internal error", routeConfig);
+      } else if (routeId) {
+        return send402Response(res, options, routeId, "Internal error");
+      } else {
+        return send402Response(res, options, "Internal error");
+      }
     }
   };
 }
