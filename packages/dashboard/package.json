@@ -9,7 +9,8 @@
     "clean": "rm -rf dist",
     "dev:backend": "tsx watch src/backend/server.ts",
     "dev:frontend": "vite",
-    "build:frontend": "vite build"
+    "build:frontend": "vite build",
+    "test": "node --test --import tsx src/backend/server.test.ts"
   },
   "dependencies": {
     "express": "^4.18.2",
