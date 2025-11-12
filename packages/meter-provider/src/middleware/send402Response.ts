@@ -15,37 +15,79 @@ import { Response } from "express";
 import { PaymentRequiredResponse } from "@meter/shared-types";
 import { MiddlewareOptions, RoutePricingConfig } from "./createX402Middleware.js";
 
+// Function overloads for backward compatibility
 export function send402Response(
   res: Response,
   options: MiddlewareOptions,
-  routeId?: string,
+  message?: string
+): void;
+export function send402Response(
+  res: Response,
+  options: MiddlewareOptions,
+  routeId: string,
+  message: string,
+  routeConfig?: RoutePricingConfig
+): void;
+export function send402Response(
+  res: Response,
+  options: MiddlewareOptions,
+  routeIdOrMessage?: string,
   message?: string,
   routeConfig?: RoutePricingConfig
 ): void {
-  // Determine route config and pricing info
+  // Determine if we're using old signature (message only) or new signature (routeId + message + routeConfig)
+  // If routeConfig is provided or message is provided as second param, it's new signature
+  // Otherwise, if routeIdOrMessage is provided and doesn't look like a routeId, it's old signature (message)
+  
   let finalRouteId: string | undefined;
+  let finalMessage: string | undefined;
+  let finalRouteConfig: RoutePricingConfig | undefined;
+
+  // New signature: routeConfig is provided, or message is provided as second parameter
+  if (routeConfig !== undefined || (message !== undefined && routeIdOrMessage && !routeIdOrMessage.includes(" "))) {
+    finalRouteId = routeIdOrMessage;
+    finalMessage = message;
+    finalRouteConfig = routeConfig;
+  } 
+  // Old signature: only routeIdOrMessage provided, and it looks like a message (contains spaces or error words)
+  else if (routeIdOrMessage && (routeIdOrMessage.includes(" ") || 
+           routeIdOrMessage.includes("expired") || 
+           routeIdOrMessage.includes("failed") ||
+           routeIdOrMessage.includes("required") ||
+           routeIdOrMessage.includes("Invalid"))) {
+    finalRouteId = options.routeId;
+    finalMessage = routeIdOrMessage;
+    finalRouteConfig = undefined;
+  }
+  // New signature: routeId provided, no message
+  else {
+    finalRouteId = routeIdOrMessage;
+    finalMessage = message;
+    finalRouteConfig = routeConfig;
+  }
+
+  // Determine route config and pricing info
   let finalPrice: number | undefined;
   let finalTokenMint: string | undefined;
   let finalPayTo: string | undefined;
   let finalChain: string | undefined;
 
-  if (routeConfig) {
+  if (finalRouteConfig) {
     // Use provided route config
-    finalRouteId = routeId;
-    finalPrice = routeConfig.price;
-    finalTokenMint = routeConfig.tokenMint;
-    finalPayTo = routeConfig.payTo;
-    finalChain = routeConfig.chain;
+    finalPrice = finalRouteConfig.price;
+    finalTokenMint = finalRouteConfig.tokenMint;
+    finalPayTo = finalRouteConfig.payTo;
+    finalChain = finalRouteConfig.chain;
   } else if (options.routeId && options.price !== undefined && options.tokenMint && options.payTo && options.chain) {
     // Fallback to single route mode options
-    finalRouteId = options.routeId;
+    finalRouteId = finalRouteId || options.routeId;
     finalPrice = options.price;
     finalTokenMint = options.tokenMint;
     finalPayTo = options.payTo;
     finalChain = options.chain;
   } else {
     // Use routeId from parameter if available
-    finalRouteId = routeId || options.routeId;
+    finalRouteId = finalRouteId || options.routeId;
     finalPrice = options.price;
     finalTokenMint = options.tokenMint;
     finalPayTo = options.payTo;
@@ -60,7 +102,7 @@ export function send402Response(
     payTo: finalPayTo || "",
     mint: finalTokenMint || "",
     chain: finalChain || "solana-devnet",
-    message: message || "Payment required to access this resource",
+    message: finalMessage || "Payment required to access this resource",
     tips: [
       "Send USDC transfer to payTo address",
       "Include transaction signature in x-meter-tx header",
