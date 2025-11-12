@@ -6,4 +6,5 @@ export * from "./payment";
 export * from "./signature";
 export * from "./fetch";
 export * from "./price";
+export * from "./MeterClient";
 
