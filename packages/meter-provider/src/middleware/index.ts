@@ -1,3 +1,3 @@
 // Express middleware for x402 payment verification
-export {};
+export * from './createX402Middleware.js';
 
