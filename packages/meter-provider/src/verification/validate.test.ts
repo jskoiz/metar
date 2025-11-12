@@ -203,4 +203,3 @@ test("validateTimestamp - handles edge case just beyond max age boundary", () =>
   
   assert.strictEqual(validateTimestamp(justBeyondMaxAge), false);
 });
-
