@@ -1,8 +1,8 @@
 /**
  * Price Service
- * 
+ *
  * Provides price lookup functionality for x402 payment routes.
- * 
+ *
  * @see {@link file://hackathon/technical-specifications.md#price-lookup-endpoint | Technical Specifications: Price Lookup Endpoint}
  */
 
@@ -21,9 +21,18 @@ prices.set("summarize:v1", {
   chain: "solana-devnet",
 });
 
+prices.set("resize-image:v1", {
+  price: 0.05,
+  currency: "USDC",
+  mint: getUSDCMint("devnet").toString(),
+  payTo: "7xKXtg2CZ3Qz4qKzJqKzJqKzJqKzJqKzJqKzJqKzJqKz", // Example
+  routeId: "resize-image:v1",
+  chain: "solana-devnet",
+});
+
 /**
  * Retrieves the price for a given route identifier.
- * 
+ *
  * @param routeId - The route identifier (e.g., "summarize:v1")
  * @returns The price response if found, null otherwise
  */
@@ -33,7 +42,7 @@ export function getPrice(routeId: string): PriceResponse | null {
 
 /**
  * Registers a price for a route. Useful for adding or updating prices programmatically.
- * 
+ *
  * @param routeId - The route identifier
  * @param priceResponse - The price response to register
  */
@@ -43,7 +52,7 @@ export function setPrice(routeId: string, priceResponse: PriceResponse): void {
 
 /**
  * Removes a price registration for a route.
- * 
+ *
  * @param routeId - The route identifier to remove
  * @returns true if the route was removed, false if it didn't exist
  */
@@ -53,10 +62,9 @@ export function removePrice(routeId: string): boolean {
 
 /**
  * Gets all registered route IDs.
- * 
+ *
  * @returns An array of all registered route identifiers
  */
 export function getAllRouteIds(): string[] {
   return Array.from(prices.keys());
 }
-
