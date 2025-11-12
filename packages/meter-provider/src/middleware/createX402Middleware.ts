@@ -17,6 +17,66 @@ import { verifyPayment } from "../verification/payment.js";
 import { send402Response } from "./send402Response.js";
 
 /**
+ * Facilitator verification response structure.
+ */
+interface FacilitatorVerifyResponse {
+  status?: string;
+  verified: boolean;
+  payer?: string;
+  timestamp?: number;
+  error?: string;
+}
+
+/**
+ * Verifies payment via facilitator service.
+ *
+ * Calls the facilitator's /verify endpoint to check if a payment transaction
+ * is valid. This abstracts the complexity of on-chain verification.
+ *
+ * @param facilitatorUrl - Base URL of the facilitator service
+ * @param txSig - Transaction signature to verify
+ * @param routeId - Route identifier
+ * @param amount - Payment amount
+ * @returns Promise that resolves to true if payment is verified, false otherwise
+ *
+ * @see {@link file://research/x402-facilitator-pattern.md | Facilitator Pattern}
+ */
+async function verifyPaymentViaFacilitator(
+  facilitatorUrl: string,
+  txSig: string,
+  routeId: string,
+  amount: number
+): Promise<boolean> {
+  try {
+    const url = `${facilitatorUrl.replace(/\/$/, "")}/verify`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        txSig,
+        routeId,
+        amount,
+      }),
+      // Set a reasonable timeout (5 seconds)
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) {
+      console.error(`Facilitator verification failed: ${response.status} ${response.statusText}`);
+      return false;
+    }
+
+    const result: FacilitatorVerifyResponse = await response.json();
+    return result.verified === true;
+  } catch (error) {
+    console.error("Facilitator verification error:", error);
+    return false;
+  }
+}
+
+/**
  * Route-specific pricing configuration.
  */
 export interface RoutePricingConfig {
@@ -60,6 +120,10 @@ export interface MiddlewareOptions {
   isTransactionUsed?: (txSig: string) => Promise<boolean>;
   /** Optional function to log payment usage */
   logUsage?: (headers: PaymentHeaders) => Promise<void>;
+  /** Enable facilitator mode for payment verification */
+  facilitatorMode?: boolean;
+  /** Facilitator service URL (required if facilitatorMode is true) */
+  facilitatorUrl?: string;
 }
 
 /**
@@ -185,18 +249,46 @@ export function createX402Middleware(options: MiddlewareOptions) {
       }
 
       // 5. Verify payment
-      const expectedMint = new PublicKey(routeConfig.tokenMint);
-      const expectedPayTo = new PublicKey(routeConfig.payTo);
-      if (
-        !(await verifyPayment(
+      let paymentVerified = false;
+
+      if (options.facilitatorMode && options.facilitatorUrl) {
+        // Use facilitator for verification
+        paymentVerified = await verifyPaymentViaFacilitator(
+          options.facilitatorUrl,
+          paymentHeaders.txSig,
+          paymentHeaders.routeId,
+          paymentHeaders.amount
+        );
+
+        // Fallback to direct verification if facilitator fails
+        if (!paymentVerified) {
+          console.warn("Facilitator verification failed, falling back to direct verification");
+          const expectedMint = new PublicKey(routeConfig.tokenMint);
+          const expectedPayTo = new PublicKey(routeConfig.payTo);
+          paymentVerified = await verifyPayment(
+            options.connection,
+            paymentHeaders.txSig,
+            expectedMint,
+            expectedPayTo,
+            routeConfig.price,
+            paymentHeaders
+          );
+        }
+      } else {
+        // Direct verification
+        const expectedMint = new PublicKey(routeConfig.tokenMint);
+        const expectedPayTo = new PublicKey(routeConfig.payTo);
+        paymentVerified = await verifyPayment(
           options.connection,
           paymentHeaders.txSig,
           expectedMint,
           expectedPayTo,
           routeConfig.price,
           paymentHeaders
-        ))
-      ) {
+        );
+      }
+
+      if (!paymentVerified) {
         return send402Response(res, options, paymentHeaders.routeId, "Payment verification failed", routeConfig);
       }
 
