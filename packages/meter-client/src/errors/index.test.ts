@@ -16,7 +16,7 @@ import {
 describe("PaymentError", () => {
   it("should create a PaymentError with message, code, and details", () => {
     const error = new PaymentError("Test error", "TEST_CODE", { foo: "bar" });
-    
+
     expect(error).toBeInstanceOf(Error);
     expect(error).toBeInstanceOf(PaymentError);
     expect(error.message).toBe("Test error");
@@ -28,7 +28,7 @@ describe("PaymentError", () => {
   it("should include recovery suggestion when provided", () => {
     const recovery = "Try again later";
     const error = new PaymentError("Test error", "TEST_CODE", undefined, recovery);
-    
+
     expect(error.recovery).toBe(recovery);
   });
 });
@@ -36,7 +36,7 @@ describe("PaymentError", () => {
 describe("PaymentRequiredError", () => {
   it("should create a PaymentRequiredError with correct defaults", () => {
     const error = new PaymentRequiredError();
-    
+
     expect(error).toBeInstanceOf(PaymentError);
     expect(error).toBeInstanceOf(PaymentRequiredError);
     expect(error.message).toBe("Payment required");
@@ -48,7 +48,7 @@ describe("PaymentRequiredError", () => {
   it("should accept details", () => {
     const details = { amount: 0.03, currency: "USDC" };
     const error = new PaymentRequiredError(details);
-    
+
     expect(error.details).toEqual(details);
   });
 });
@@ -56,7 +56,7 @@ describe("PaymentRequiredError", () => {
 describe("PaymentVerificationError", () => {
   it("should create a PaymentVerificationError with correct defaults", () => {
     const error = new PaymentVerificationError();
-    
+
     expect(error).toBeInstanceOf(PaymentError);
     expect(error).toBeInstanceOf(PaymentVerificationError);
     expect(error.message).toBe("Payment verification failed");
@@ -68,7 +68,7 @@ describe("PaymentVerificationError", () => {
   it("should accept details", () => {
     const details = { txSig: "abc123" };
     const error = new PaymentVerificationError(details);
-    
+
     expect(error.details).toEqual(details);
   });
 });
@@ -76,7 +76,7 @@ describe("PaymentVerificationError", () => {
 describe("InsufficientBalanceError", () => {
   it("should create an InsufficientBalanceError with correct defaults", () => {
     const error = new InsufficientBalanceError();
-    
+
     expect(error).toBeInstanceOf(PaymentError);
     expect(error).toBeInstanceOf(InsufficientBalanceError);
     expect(error.message).toBe("Insufficient balance");
@@ -88,7 +88,7 @@ describe("InsufficientBalanceError", () => {
   it("should accept details", () => {
     const details = { required: 0.05, available: 0.02 };
     const error = new InsufficientBalanceError(details);
-    
+
     expect(error.details).toEqual(details);
   });
 });
@@ -96,7 +96,7 @@ describe("InsufficientBalanceError", () => {
 describe("NetworkError", () => {
   it("should create a NetworkError with correct defaults", () => {
     const error = new NetworkError();
-    
+
     expect(error).toBeInstanceOf(PaymentError);
     expect(error).toBeInstanceOf(NetworkError);
     expect(error.message).toBe("Network error");
@@ -108,7 +108,7 @@ describe("NetworkError", () => {
   it("should accept details", () => {
     const details = { url: "https://api.example.com" };
     const error = new NetworkError(details);
-    
+
     expect(error.details).toEqual(details);
   });
 });
@@ -132,7 +132,7 @@ describe("parse402Response", () => {
     );
 
     await expect(parse402Response(response)).rejects.toThrow(PaymentRequiredError);
-    
+
     try {
       await parse402Response(response);
     } catch (error) {
@@ -158,7 +158,7 @@ describe("parse402Response", () => {
     );
 
     await expect(parse402Response(response)).rejects.toThrow(PaymentVerificationError);
-    
+
     try {
       await parse402Response(response);
     } catch (error) {
@@ -179,7 +179,7 @@ describe("parse402Response", () => {
     );
 
     await expect(parse402Response(response)).rejects.toThrow(InsufficientBalanceError);
-    
+
     try {
       await parse402Response(response);
     } catch (error) {
@@ -194,7 +194,7 @@ describe("parse402Response", () => {
     });
 
     await expect(parse402Response(response)).rejects.toThrow(PaymentRequiredError);
-    
+
     try {
       await parse402Response(response);
     } catch (error) {
@@ -212,7 +212,7 @@ describe("parse402Response", () => {
     });
 
     await expect(parse402Response(response)).rejects.toThrow(PaymentRequiredError);
-    
+
     try {
       await parse402Response(response);
     } catch (error) {
@@ -265,7 +265,7 @@ describe("parsePaymentError", () => {
   it("should return PaymentError if already a PaymentError", async () => {
     const error = new PaymentRequiredError();
     const result = await parsePaymentError(error);
-    
+
     expect(result).toBe(error);
   });
 
@@ -282,14 +282,14 @@ describe("parsePaymentError", () => {
     );
 
     const result = await parsePaymentError(response);
-    
+
     expect(result).toBeInstanceOf(PaymentRequiredError);
   });
 
   it("should wrap TypeError fetch errors as NetworkError", async () => {
     const error = new TypeError("Failed to fetch");
     const result = await parsePaymentError(error);
-    
+
     expect(result).toBeInstanceOf(NetworkError);
     expect(result.details).toHaveProperty("originalError", "Failed to fetch");
   });
@@ -297,35 +297,35 @@ describe("parsePaymentError", () => {
   it("should wrap network-related Error messages as NetworkError", async () => {
     const error = new Error("Network request failed");
     const result = await parsePaymentError(error);
-    
+
     expect(result).toBeInstanceOf(NetworkError);
   });
 
   it("should wrap connection timeout errors as NetworkError", async () => {
     const error = new Error("Connection timeout");
     const result = await parsePaymentError(error);
-    
+
     expect(result).toBeInstanceOf(NetworkError);
   });
 
   it("should wrap balance-related errors as InsufficientBalanceError", async () => {
     const error = new Error("Insufficient balance in wallet");
     const result = await parsePaymentError(error);
-    
+
     expect(result).toBeInstanceOf(InsufficientBalanceError);
   });
 
   it("should wrap unknown errors as NetworkError", async () => {
     const error = { some: "unknown", error: "object" };
     const result = await parsePaymentError(error);
-    
+
     expect(result).toBeInstanceOf(NetworkError);
     expect(result.details).toHaveProperty("originalError");
   });
 
   it("should handle string errors", async () => {
     const result = await parsePaymentError("String error");
-    
+
     expect(result).toBeInstanceOf(NetworkError);
     expect(result.details).toHaveProperty("originalError", "String error");
   });
@@ -333,7 +333,7 @@ describe("parsePaymentError", () => {
   it("should handle null/undefined errors", async () => {
     const result1 = await parsePaymentError(null);
     const result2 = await parsePaymentError(undefined);
-    
+
     expect(result1).toBeInstanceOf(NetworkError);
     expect(result2).toBeInstanceOf(NetworkError);
   });
@@ -341,9 +341,8 @@ describe("parsePaymentError", () => {
   it("should not parse non-402 Response objects", async () => {
     const response = new Response("OK", { status: 200 });
     const result = await parsePaymentError(response);
-    
+
     // Should wrap as NetworkError, not parse as 402
     expect(result).toBeInstanceOf(NetworkError);
   });
 });
-
