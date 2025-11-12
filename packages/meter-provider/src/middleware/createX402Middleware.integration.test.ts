@@ -21,7 +21,7 @@ import express, { Request, Response, NextFunction } from "express";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import nacl from "tweetnacl";
 import { AgentKey } from "@meter/shared-types";
-import { createX402Middleware, MiddlewareOptions } from "./createX402Middleware.js";
+import { createX402Middleware, MiddlewareOptions, RoutePricingConfig } from "./createX402Middleware.js";
 import { AgentKeyRegistry } from "../verification/tap.js";
 import { createConnection, getUSDCMint } from "@meter/shared-config";
 import { buildUSDCTransfer, sendPayment, createNodeWallet } from "@meter/meter-client";
@@ -547,5 +547,144 @@ test("createX402Middleware - attaches payment info to request on success", { ski
   // Payment verification will fail, so payment won't be attached
   // But the middleware structure is correct
   assert.ok(true, "Middleware structure verified");
+});
+
+test("createX402Middleware - supports multi-route pricing config", { skip: skipIntegration }, async () => {
+  const connection = createConnection("devnet");
+  const usdcMint = getUSDCMint("devnet");
+  const registry = new MockAgentKeyRegistry();
+  const payTo = Keypair.generate().publicKey.toString();
+
+  // Create multi-route pricing config
+  const routes = new Map([
+    ["summarize:v1", {
+      price: 0.03,
+      tokenMint: usdcMint.toString(),
+      payTo,
+      chain: "solana-devnet" as const,
+    }],
+    ["resize-image:v1", {
+      price: 0.05,
+      tokenMint: usdcMint.toString(),
+      payTo,
+      chain: "solana-devnet" as const,
+    }],
+  ]);
+
+  const options: MiddlewareOptions = {
+    routes,
+    connection,
+    agentRegistry: registry,
+  };
+
+  const app = createTestApp(options);
+  
+  // Test with summarize:v1 route
+  const req1 = {
+    method: "GET",
+    path: "/api/test",
+    headers: {
+      "x-meter-tx": "test-tx-sig-1",
+      "x-meter-route": "summarize:v1",
+      "x-meter-amt": "0.03",
+      "x-meter-currency": "USDC",
+      "x-meter-nonce": "test-nonce-multi-1",
+      "x-meter-ts": Date.now().toString(),
+      "x-meter-agent-kid": "test-agent",
+    },
+  } as Request;
+
+  let responseStatus1 = 0;
+  let responseBody1: any = null;
+
+  const res1 = {
+    status: (code: number) => {
+      responseStatus1 = code;
+      return {
+        json: (body: any) => {
+          responseBody1 = body;
+        },
+      };
+    },
+  } as Response;
+
+  const middleware = createX402Middleware(options);
+  await middleware(req1, res1, () => {});
+
+  // Should fail at payment verification (no real tx), but route should be recognized
+  assert.strictEqual(responseStatus1, 402);
+  assert.strictEqual(responseBody1?.route, "summarize:v1");
+  assert.strictEqual(responseBody1?.amount, 0.03);
+
+  // Test with resize-image:v1 route
+  const req2 = {
+    method: "GET",
+    path: "/api/test",
+    headers: {
+      "x-meter-tx": "test-tx-sig-2",
+      "x-meter-route": "resize-image:v1",
+      "x-meter-amt": "0.05",
+      "x-meter-currency": "USDC",
+      "x-meter-nonce": "test-nonce-multi-2",
+      "x-meter-ts": Date.now().toString(),
+      "x-meter-agent-kid": "test-agent",
+    },
+  } as Request;
+
+  let responseStatus2 = 0;
+  let responseBody2: any = null;
+
+  const res2 = {
+    status: (code: number) => {
+      responseStatus2 = code;
+      return {
+        json: (body: any) => {
+          responseBody2 = body;
+        },
+      };
+    },
+  } as Response;
+
+  await middleware(req2, res2, () => {});
+
+  // Should fail at payment verification (no real tx), but route should be recognized
+  assert.strictEqual(responseStatus2, 402);
+  assert.strictEqual(responseBody2?.route, "resize-image:v1");
+  assert.strictEqual(responseBody2?.amount, 0.05);
+
+  // Test with unknown route
+  const req3 = {
+    method: "GET",
+    path: "/api/test",
+    headers: {
+      "x-meter-tx": "test-tx-sig-3",
+      "x-meter-route": "unknown-route:v1",
+      "x-meter-amt": "0.01",
+      "x-meter-currency": "USDC",
+      "x-meter-nonce": "test-nonce-multi-3",
+      "x-meter-ts": Date.now().toString(),
+      "x-meter-agent-kid": "test-agent",
+    },
+  } as Request;
+
+  let responseStatus3 = 0;
+  let responseBody3: any = null;
+
+  const res3 = {
+    status: (code: number) => {
+      responseStatus3 = code;
+      return {
+        json: (body: any) => {
+          responseBody3 = body;
+        },
+      };
+    },
+  } as Response;
+
+  await middleware(req3, res3, () => {});
+
+  // Should fail with "Route not found"
+  assert.strictEqual(responseStatus3, 402);
+  assert.ok(responseBody3?.message?.includes("Route not found") || responseBody3?.message === "Route not found");
 });
 
