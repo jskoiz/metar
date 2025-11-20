@@ -12,9 +12,9 @@
  *   npm run demo:client -- --provider http://localhost:3000 --text "Your text to summarize"
  */
 
-import { Connection, Keypair } from "@solana/web3.js";
+import { Keypair } from "@solana/web3.js";
 import { MetarClient, createNodeWallet, getPrice, InsufficientBalanceError } from "@metar/metar-client";
-import { createConnection, getUSDCMint } from "@metar/shared-config";
+import { createConnection } from "@metar/shared-config";
 import nacl from "tweetnacl";
 
 interface DemoOptions {
