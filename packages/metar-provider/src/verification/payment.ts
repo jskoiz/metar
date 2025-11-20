@@ -31,7 +31,7 @@ import { PaymentHeaders } from "@metar/shared-types";
  * @example
  * ```typescript
  * import { Connection, PublicKey } from "@solana/web3.js";
- * import { verifyPayment } from "@metar/meter-provider";
+ * import { verifyPayment } from "@metar/metar-provider";
  * import { getUSDCMint } from "@metar/shared-config";
  *
  * const connection = new Connection("https://api.devnet.solana.com");

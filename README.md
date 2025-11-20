@@ -128,9 +128,10 @@ cd packages/examples && npm run demo:client -- --provider http://localhost:3000 
 
 ### Prerequisites
 
-- Node.js >= 18.0.0
-- npm >= 9.0.0
-- Solana CLI (optional, for devnet testing)
+- **Node.js** >= 18.0.0 (v22+ recommended)
+  - Note: Node.js v20.6.0+ and v22+ use `--import` instead of `--loader` flag
+- **npm** >= 9.0.0
+- **Solana CLI** (optional, for devnet testing)
 
 ### Installation
 
@@ -232,16 +233,24 @@ See the complete working example in `packages/examples`:
 cd packages/examples
 npm run demo:provider
 
-# Terminal 2: Run demo client
+# Terminal 2: Run demo client (with new wallet)
 cd packages/examples && npm run demo:client -- --provider http://localhost:3000 --text "Text to summarize"
+
+# Or use an existing wallet with --private-key flag
+cd packages/examples && npm run demo:client -- --private-key <your-base58-or-base64-key> --provider http://localhost:3000 --text "Text to summarize"
 ```
 
 The demo shows the complete payment flow including:
 - Price lookup
 - Payment transaction creation
-- TAP signature generation
+- TAP signature generation (separate Ed25519 keypair)
 - Payment verification
 - Usage tracking
+
+**Important Notes:**
+- The demo generates a **separate TAP agent keypair** for signatures (not the Solana wallet key)
+- Your wallet needs **SOL for transaction fees** and **USDC balance** in an associated token account
+- Token accounts are automatically created if they don't exist
 
 For detailed documentation, see [packages/examples/README.md](packages/examples/README.md).
 

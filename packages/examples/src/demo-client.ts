@@ -13,18 +13,20 @@
  */
 
 import { Connection, Keypair } from "@solana/web3.js";
-import { MetarClient, createNodeWallet, getPrice } from "@metar/metar-client";
+import { MetarClient, createNodeWallet, getPrice, InsufficientBalanceError } from "@metar/metar-client";
 import { createConnection, getUSDCMint } from "@metar/shared-config";
+import nacl from "tweetnacl";
 
 interface DemoOptions {
   providerUrl: string;
   text: string;
   agentKeyId?: string;
   network?: "devnet" | "mainnet";
+  privateKey?: string;
 }
 
 async function runDemo(options: DemoOptions): Promise<void> {
-  const { providerUrl, text, agentKeyId = "demo-agent-1", network = "devnet" } = options;
+  const { providerUrl, text, agentKeyId = "demo-agent-1", network = "devnet", privateKey } = options;
 
   console.log("🚀 x402 Demo Client");
   console.log("==================\n");
@@ -41,15 +43,52 @@ async function runDemo(options: DemoOptions): Promise<void> {
 
   // Generate or use existing keypair
   // In production, you would load this from a secure location
-  const keypair = Keypair.generate();
+  let keypair: Keypair;
+  if (privateKey) {
+    // Load from provided private key (supports both base58 and base64)
+    try {
+      let secretKey: Uint8Array;
+      
+      // Try base64 first
+      try {
+        secretKey = Uint8Array.from(Buffer.from(privateKey, "base64"));
+        if (secretKey.length === 64) {
+          // Valid base64 encoded 64-byte key
+          keypair = Keypair.fromSecretKey(secretKey);
+        } else {
+          throw new Error("Base64 decode didn't produce 64 bytes");
+        }
+      } catch {
+        // Try base58 (common Solana wallet format)
+        try {
+          const bs58 = require("bs58");
+          secretKey = bs58.decode(privateKey);
+          if (secretKey.length === 64) {
+            keypair = Keypair.fromSecretKey(secretKey);
+          } else {
+            throw new Error("Base58 decode didn't produce 64 bytes");
+          }
+        } catch (base58Error) {
+          throw new Error("Failed to decode private key as base64 or base58");
+        }
+      }
+    } catch (error) {
+      console.error("❌ Failed to load private key:", error);
+      console.error("   The private key should be:");
+      console.error("   - Base64 encoded (64 bytes = 88 base64 characters), OR");
+      console.error("   - Base58 encoded (64 bytes)");
+      console.error("   Example: Get your private key from your wallet and provide it as-is");
+      process.exit(1);
+    }
+  } else {
+    keypair = Keypair.generate();
+  }
   const wallet = createNodeWallet(keypair);
 
   console.log("🔑 Wallet:");
-  console.log(`   Public Key (base58): ${keypair.publicKey.toBase58()}`);
-  const publicKeyBase64 = Buffer.from(keypair.publicKey.toBuffer()).toString("base64");
-  console.log(`   Public Key (base64): ${publicKeyBase64}`);
-  console.log(`\n💡 To register this agent with the provider, use:`);
-  console.log(`   Register agent: ${agentKeyId} -> ${publicKeyBase64}\n`);
+  console.log(`   Solana Wallet (base58): ${keypair.publicKey.toBase58()}`);
+  console.log(`   Solana Wallet (base64): ${Buffer.from(keypair.publicKey.toBuffer()).toString("base64")}`);
+  console.log(`\n💡 Note: TAP agent keypair will be generated separately for signatures\n`);
 
   // Step 1: Price Lookup
   console.log("💰 Step 1: Price Lookup");
@@ -90,24 +129,31 @@ async function runDemo(options: DemoOptions): Promise<void> {
     console.log("   ⚠️  Could not check balance:", error);
   }
 
-  // Step 3: Create MetarClient
+  // Step 3: Generate TAP agent keypair (separate from Solana wallet)
   console.log("🔧 Step 3: Creating MetarClient");
+  console.log("   Generating TAP agent keypair for signatures...");
+  
+  // Generate Ed25519 keypair for TAP signatures (separate from Solana wallet)
+  const agentKeypair = nacl.sign.keyPair();
+  const agentPublicKeyBase64 = Buffer.from(agentKeypair.publicKey).toString("base64");
+  
   const client = new MetarClient({
     providerBaseURL: providerUrl,
     agentKeyId,
-    agentPrivateKey: keypair.secretKey,
+    agentPrivateKey: agentKeypair.secretKey, // Use TAP keypair, not Solana wallet
     wallet,
     connection,
     chain: network === "devnet" ? "solana-devnet" : "solana",
   });
-  console.log("   ✅ MetarClient created\n");
+  console.log("   ✅ MetarClient created");
+  console.log(`   TAP Agent Public Key (base64): ${agentPublicKeyBase64}\n`);
 
   // Step 4: Register agent with provider (for demo)
   console.log("🔐 Step 4: Registering Agent");
   console.log(`   Registering agent '${agentKeyId}' with provider...`);
 
   try {
-    const publicKeyBase64 = Buffer.from(keypair.publicKey.toBuffer()).toString("base64");
+    // Register the TAP agent public key (not the Solana wallet public key)
     const registerResponse = await fetch(`${providerUrl}/.meter/register-agent`, {
       method: "POST",
       headers: {
@@ -115,7 +161,7 @@ async function runDemo(options: DemoOptions): Promise<void> {
       },
       body: JSON.stringify({
         keyId: agentKeyId,
-        publicKey: publicKeyBase64,
+        publicKey: agentPublicKeyBase64, // Use TAP agent public key
       }),
     });
 
@@ -161,6 +207,27 @@ async function runDemo(options: DemoOptions): Promise<void> {
     console.log("\n✅ Demo completed successfully!");
   } catch (error) {
     console.error("\n❌ Error during API request:");
+    
+    // Handle InsufficientBalanceError with helpful instructions
+    if (error instanceof InsufficientBalanceError) {
+      console.error(`   ${error.message}`);
+      if (error.recovery) {
+        console.error(`\n   💡 ${error.recovery}`);
+      }
+      console.error(`\n   📋 To fix this issue:`);
+      console.error(`   1. Ensure you have SOL for transaction fees:`);
+      console.error(`      solana airdrop 1 ${keypair.publicKey.toBase58()} --url ${network === "devnet" ? "devnet" : "mainnet-beta"}`);
+      console.error(`   2. You need a USDC token account with balance.`);
+      console.error(`      - The token account may need to be created first`);
+      if (priceInfo) {
+        console.error(`      - You need at least ${priceInfo.price} USDC in your account`);
+        console.error(`      - USDC Mint: ${priceInfo.mint}`);
+      }
+      console.error(`   3. For devnet, you may need to use a USDC faucet or transfer from another account`);
+      throw error;
+    }
+    
+    // Handle other errors
     if (error instanceof Error) {
       console.error(`   ${error.message}`);
       if (error.stack) {
@@ -198,6 +265,8 @@ function parseArgs(): DemoOptions {
         console.error(`Invalid network: ${network}. Must be 'devnet' or 'mainnet'`);
         process.exit(1);
       }
+    } else if (arg === "--private-key" && i + 1 < args.length) {
+      options.privateKey = args[++i];
     } else if (arg === "--help" || arg === "-h") {
       console.log(`
 Usage: npm run demo:client [options]
@@ -207,10 +276,14 @@ Options:
   --text <text>        Text to summarize
   --agent-key-id <id>  Agent key ID (default: demo-agent-1)
   --network <network>  Network: devnet or mainnet (default: devnet)
+  --private-key <key>  Private key (base58 or base64 encoded, 64 bytes) to use instead of generating new wallet
   --help, -h           Show this help message
 
 Example:
   npm run demo:client -- --provider http://localhost:3000 --text "Hello world"
+  
+  # Using an existing wallet:
+  npm run demo:client -- --private-key <base64-key> --provider http://localhost:3000 --text "Hello world"
       `);
       process.exit(0);
     }

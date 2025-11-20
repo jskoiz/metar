@@ -16,7 +16,9 @@ Get started with Metar SDK in minutes. This guide shows you how to use the x402 
 
 ## Prerequisites
 
-- **Node.js** >= 18.0.0
+- **Node.js** >= 18.0.0 (v22+ recommended)
+  - **Note**: Node.js v20.6.0+ and v22+ use `--import` instead of `--loader` flag for tsx
+  - The codebase has been updated to use `--import` for compatibility
 - **npm** >= 9.0.0
 - **Solana Wallet** (for testing on devnet/mainnet)
 - Basic familiarity with TypeScript/JavaScript
@@ -469,21 +471,34 @@ try {
 
 ## Troubleshooting
 
-### "Insufficient balance" Error
+### "Insufficient balance" or "no record of a prior credit" Error
 
-**Problem**: Wallet doesn't have enough SOL or USDC.
+**Problem**: Wallet doesn't have enough SOL, USDC, or the USDC token account doesn't exist.
+
+**Common Causes**:
+
+1. **No SOL balance**: Need SOL for transaction fees
+2. **USDC token account doesn't exist**: The associated token account may need to be created
+3. **Insufficient USDC balance**: Not enough USDC in the token account
 
 **Solution**:
 
 ```bash
-# Airdrop SOL on devnet
+# 1. Airdrop SOL on devnet for transaction fees
 solana airdrop 1 <YOUR_PUBLIC_KEY> --url devnet
 
-# For USDC, you may need to:
+# 2. Ensure USDC token account exists and has balance
+# Token accounts are automatically created when needed, but you need:
+# - SOL for the creation transaction fee
+# - USDC balance in the account (at least the payment amount)
+
+# For USDC on devnet, you may need to:
 # 1. Use a devnet USDC faucet
 # 2. Mint tokens if you have mint authority
 # 3. Transfer from another devnet account
 ```
+
+**Note**: The SDK automatically creates token accounts if they don't exist, but you still need SOL for the creation transaction fee.
 
 ### "Payment verification failed" Error
 
@@ -500,12 +515,31 @@ solana airdrop 1 <YOUR_PUBLIC_KEY> --url devnet
 
 **Problem**: Agent key not registered or signature invalid.
 
+**Common Causes**:
+
+1. **Agent key not registered**: The TAP agent public key must be registered with the provider
+2. **Path mismatch**: Signature base string path doesn't match (e.g., trailing `?` when no query params)
+3. **Wrong keypair**: Using Solana wallet key instead of separate TAP agent keypair
+4. **Key ID mismatch**: Agent key ID in headers doesn't match registered key
+
 **Solutions**:
 
-1. Register agent with provider's agent registry
-2. Verify agent key ID matches
-3. Check public key format (base64 or base58)
-4. Ensure agent private key matches registered public key
+1. **Register the agent**: Make sure the TAP agent public key (not Solana wallet public key) is registered:
+   ```bash
+   curl -X POST http://localhost:3000/.meter/register-agent \
+     -H "Content-Type: application/json" \
+     -d '{"keyId": "demo-agent-1", "publicKey": "<TAP-agent-public-key-base64>"}'
+   ```
+
+2. **Use separate TAP keypair**: The demo automatically generates a separate Ed25519 keypair for TAP signatures. Don't use your Solana wallet key for TAP signatures.
+
+3. **Enable debug logging**: See exactly what's happening:
+   ```bash
+   DEBUG_TAP=true npm run demo:client -- --provider http://localhost:3000 --text "Test"
+   ```
+   This shows the signature base string construction and verification details.
+
+4. **Check path construction**: Ensure the path used in signature matches exactly (no trailing `?` if no query parameters)
 
 ### "Request expired" Error
 
@@ -535,16 +569,43 @@ solana airdrop 1 <YOUR_PUBLIC_KEY> --url devnet
 
 **Solutions**:
 
-1. Ensure Node.js >= 18.0.0
-2. Clear node_modules and reinstall:
+1. Ensure Node.js >= 18.0.0 (v22+ recommended)
+2. If you see `Error: tsx must be loaded with --import instead of --loader`:
+   - This has been fixed in the codebase
+   - Ensure you're using the latest version
+   - Node.js v20.6.0+ and v22+ require `--import` flag
+3. Clear node_modules and reinstall:
    ```bash
    rm -rf node_modules package-lock.json
    npm install
    ```
-3. Rebuild packages:
+4. Rebuild packages:
    ```bash
    npm run build
    ```
+
+### Debug Mode
+
+Enable detailed debug logging to troubleshoot issues:
+
+**Client Side**:
+```bash
+DEBUG_TAP=true npm run demo:client -- --provider http://localhost:3000 --text "Test"
+```
+
+**Provider Side**:
+```bash
+DEBUG_TAP=true npm run demo:provider
+```
+
+This will show:
+- Signature base string construction (client)
+- Signature base string reconstruction (provider)
+- Agent key lookup results
+- Signature verification details
+- Any mismatches or errors
+
+Use this to diagnose "Invalid agent signature" errors and other TAP-related issues.
 
 ---
 

@@ -13,7 +13,7 @@ import { WalletAdapter } from "./types";
  * @example
  * ```typescript
  * import { Keypair } from "@solana/web3.js";
- * import { createNodeWallet } from "@metar/meter-client";
+ * import { createNodeWallet } from "@metar/metar-client";
  *
  * const keypair = Keypair.generate();
  * const wallet = createNodeWallet(keypair);

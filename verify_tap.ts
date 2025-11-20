@@ -1,10 +1,10 @@
 import nacl from "tweetnacl";
-import { signRequest } from "./packages/meter-client/src/signature/signRequest.js";
-import { createAuthorizationHeader } from "./packages/meter-client/src/signature/createAuthHeader.js";
+import { signRequest, constructSignatureBaseString } from "./packages/metar-client/src/signature/index.js";
+import { createAuthorizationHeader } from "./packages/metar-client/src/signature/createAuthHeader.js";
 import {
   verifyAgentSignature,
   AgentKeyRegistry,
-} from "./packages/meter-provider/src/verification/tap.js";
+} from "./packages/metar-provider/src/verification/tap.js";
 import { AgentKey } from "./packages/shared-types/src/index.js";
 
 // Mock Request
@@ -54,18 +54,11 @@ async function runTest() {
 
   // 3. Sign Request (Client Side)
   console.log("Signing request...");
-  const jws = signRequest({
-    method: "POST",
-    path: "/api/pay",
-    date,
-    nonce,
-    txSig,
-    keyId,
-    privateKey: keyPair.secretKey,
-  });
-  console.log("Generated JWS:", jws);
+  const baseString = constructSignatureBaseString("POST", "/api/pay", date, nonce, txSig);
+  const signature = signRequest(keyPair.secretKey, baseString);
+  console.log("Generated signature:", signature);
 
-  const authHeader = createAuthorizationHeader(keyId, jws);
+  const authHeader = createAuthorizationHeader(keyId, signature);
   console.log("Auth Header:", authHeader);
 
   // 4. Verify Request (Server Side)

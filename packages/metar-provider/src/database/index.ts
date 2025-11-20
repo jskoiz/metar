@@ -23,7 +23,7 @@ import { randomUUID } from "crypto";
  * @example
  * ```typescript
  * import { Database } from "sqlite3";
- * import { initializeDatabase } from "@metar/meter-provider";
+ * import { initializeDatabase } from "@metar/metar-provider";
  *
  * const db = new Database("usage.db");
  * await initializeDatabase(db);
@@ -99,7 +99,7 @@ export function initializeDatabase(db: Database): Promise<void> {
  * @example
  * ```typescript
  * import { Database } from "sqlite3";
- * import { logUsage } from "@metar/meter-provider";
+ * import { logUsage } from "@metar/metar-provider";
  * import { PaymentHeaders } from "@metar/shared-types";
  *
  * const db = new Database("usage.db");
@@ -169,7 +169,7 @@ export function logUsage(db: Database, headers: PaymentHeaders, payer: string): 
  * @example
  * ```typescript
  * import { Database } from "sqlite3";
- * import { isTransactionUsed } from "@metar/meter-provider";
+ * import { isTransactionUsed } from "@metar/metar-provider";
  *
  * const db = new Database("usage.db");
  * const alreadyUsed = await isTransactionUsed(db, "5j7s8K9...");

@@ -17,7 +17,7 @@ import { WalletAdapter } from "../wallet/types";
  * @example
  * ```typescript
  * import { Connection } from "@solana/web3.js";
- * import { sendPayment, createNodeWallet } from "@metar/meter-client";
+ * import { sendPayment, createNodeWallet } from "@metar/metar-client";
  * import { Keypair } from "@solana/web3.js";
  *
  * const connection = new Connection("https://api.devnet.solana.com");

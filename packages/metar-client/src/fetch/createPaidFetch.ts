@@ -93,7 +93,7 @@ function extractPath(url: string): string {
  * @example
  * ```typescript
  * import { Connection } from "@solana/web3.js";
- * import { createPaidFetch, createNodeWallet } from "@metar/meter-client";
+ * import { createPaidFetch, createNodeWallet } from "@metar/metar-client";
  * import { Keypair } from "@solana/web3.js";
  *
  * const connection = new Connection("https://api.devnet.solana.com");
@@ -204,12 +204,14 @@ export function createPaidFetch(config: PaidFetchConfig): typeof fetch {
         try {
           txSig = await sendPayment(connection, wallet, transaction);
         } catch (error) {
-          // Check if error is related to insufficient balance
+          // Check if error is related to insufficient balance or missing token account
           const errorMessage = error instanceof Error ? error.message : String(error);
           if (
             errorMessage.includes("insufficient") ||
             errorMessage.includes("balance") ||
-            errorMessage.includes("funds")
+            errorMessage.includes("funds") ||
+            errorMessage.includes("no record of a prior credit") ||
+            errorMessage.includes("Attempt to debit")
           ) {
             throw new InsufficientBalanceError({ routeId, amount: priceInfo.price });
           }
@@ -221,9 +223,25 @@ export function createPaidFetch(config: PaidFetchConfig): typeof fetch {
         const date = new Date(timestamp).toUTCString();
 
         const baseString = constructSignatureBaseString(method, path, date, nonce, txSig);
+        
+        // Debug logging
+        if (process.env.DEBUG_TAP === "true") {
+          console.log("[CLIENT TAP DEBUG] Constructing signature:");
+          console.log(`  Method: ${method}`);
+          console.log(`  Path: ${path}`);
+          console.log(`  Date: ${date}`);
+          console.log(`  Nonce: ${nonce}`);
+          console.log(`  TxSig: ${txSig}`);
+          console.log("[CLIENT TAP DEBUG] Base string:");
+          console.log(baseString.split("\n").map((line, i) => `  ${i + 1}. ${line}`).join("\n"));
+        }
 
         const signature = signRequest(agentPrivateKey, baseString);
         const authorizationHeader = createAuthorizationHeader(agentKeyId, signature);
+        
+        if (process.env.DEBUG_TAP === "true") {
+          console.log("[CLIENT TAP DEBUG] Authorization header:", authorizationHeader);
+        }
 
         // 6. Add all payment headers
         const headers = new Headers(init?.headers);

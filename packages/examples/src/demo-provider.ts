@@ -12,11 +12,10 @@
  */
 
 import express from "express";
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
-import { createX402Middleware } from "@metar/meter-provider";
+import { Keypair, PublicKey } from "@solana/web3.js";
+import { createX402Middleware, AgentKeyRegistry } from "@metar/metar-provider";
 import { createConnection, getUSDCMint } from "@metar/shared-config";
-import { AgentKeyRegistry, AgentKey } from "@metar/shared-types";
-import { PriceResponse } from "@metar/shared-types";
+import { AgentKey, PriceResponse } from "@metar/shared-types";
 
 // Simple in-memory agent registry for demo
 class DemoAgentRegistry implements AgentKeyRegistry {
@@ -127,7 +126,7 @@ async function createDemoServer(options: {
       // Access payment info from middleware
       const payment = (req as any).payment;
 
-      res.json({
+      return res.json({
         summary,
         metadata: {
           routeId: "summarize:v1",
@@ -150,8 +149,14 @@ async function createDemoServer(options: {
     }
 
     registerDemoAgent(keyId, publicKey);
+    
+    // Debug: Log registration (only if DEBUG_TAP is enabled)
+    if (process.env.DEBUG_TAP === "true") {
+      console.log(`[PROVIDER] Registered agent: ${keyId}`);
+      console.log(`[PROVIDER] Public key (first 20 chars): ${publicKey.substring(0, 20)}...`);
+    }
 
-    res.json({
+    return res.json({
       status: "ok",
       message: `Agent ${keyId} registered successfully`,
       timestamp: Date.now(),
@@ -159,7 +164,7 @@ async function createDemoServer(options: {
   });
 
   // Health check endpoint
-  app.get("/health", (req, res) => {
+  app.get("/health", (_req, res) => {
     res.json({
       status: "ok",
       network,

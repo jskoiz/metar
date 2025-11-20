@@ -9,7 +9,7 @@
     "build": "npm run build --workspaces",
     "build:watch": "npm run build:watch --workspaces",
     "test": "npm run test --workspaces",
-    "test:e2e": "node --loader tsx --test tests/e2e.test.ts",
+    "test:e2e": "node --import tsx --test tests/e2e.test.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",

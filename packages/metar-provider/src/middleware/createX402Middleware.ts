@@ -151,7 +151,7 @@ export interface MiddlewareOptions {
  * ```typescript
  * import express from "express";
  * import { Connection, PublicKey } from "@solana/web3.js";
- * import { createX402Middleware } from "@metar/meter-provider";
+ * import { createX402Middleware } from "@metar/metar-provider";
  * import { getUSDCMint } from "@metar/shared-config";
  *
  * const app = express();

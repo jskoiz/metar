@@ -26,7 +26,16 @@ export function reconstructSignatureBaseString(
   _authParams: { headers: string[] }
 ): string {
   const method = req.method.toLowerCase();
-  const path = req.path + (req.query ? `?${new URLSearchParams(req.query as any).toString()}` : "");
+  
+  // Reconstruct path: use req.path and only add query string if it exists and is not empty
+  let path = req.path;
+  if (req.query && Object.keys(req.query).length > 0) {
+    const queryString = new URLSearchParams(req.query as any).toString();
+    if (queryString) {
+      path = `${path}?${queryString}`;
+    }
+  }
+  
   const date = req.headers.date as string;
   const nonce = req.headers["x-meter-nonce"] as string;
   const txSig = req.headers["x-meter-tx"] as string;
@@ -98,32 +107,89 @@ export async function verifyAgentSignature(
   agentKeyId: string,
   registry: AgentKeyRegistry
 ): Promise<boolean> {
+  const debugEnabled = process.env.DEBUG_TAP === "true";
+  
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Signature ")) return false;
+  if (!authHeader || !authHeader.startsWith("Signature ")) {
+    if (debugEnabled) {
+      console.log("[TAP DEBUG] No valid Authorization header");
+    }
+    return false;
+  }
 
   // Parse the HTTP Signature header
   const authParams = parseAuthorizationHeader(authHeader);
-  if (!authParams) return false;
+  if (!authParams) {
+    if (debugEnabled) {
+      console.log("[TAP DEBUG] Failed to parse Authorization header");
+    }
+    return false;
+  }
+
+  if (debugEnabled) {
+    console.log("[TAP DEBUG] Parsed auth params:", {
+      keyId: authParams.keyId,
+      algorithm: authParams.algorithm,
+      headers: authParams.headers,
+      signatureLength: authParams.signature.length,
+    });
+  }
 
   // Verify keyId matches
-  if (authParams.keyId !== agentKeyId) return false;
+  if (authParams.keyId !== agentKeyId) {
+    if (debugEnabled) {
+      console.log(`[TAP DEBUG] KeyId mismatch: expected "${agentKeyId}", got "${authParams.keyId}"`);
+    }
+    return false;
+  }
 
   // Verify algorithm is ed25519
-  if (authParams.algorithm !== "ed25519") return false;
+  if (authParams.algorithm !== "ed25519") {
+    if (debugEnabled) {
+      console.log(`[TAP DEBUG] Algorithm mismatch: expected "ed25519", got "${authParams.algorithm}"`);
+    }
+    return false;
+  }
 
   // Verify headers list matches expected TAP headers
   const expectedHeaders = ["(request-target)", "date", "x-meter-nonce", "x-meter-tx"];
-  if (authParams.headers.length !== expectedHeaders.length) return false;
+  if (authParams.headers.length !== expectedHeaders.length) {
+    if (debugEnabled) {
+      console.log(`[TAP DEBUG] Headers length mismatch: expected ${expectedHeaders.length}, got ${authParams.headers.length}`);
+    }
+    return false;
+  }
   for (let i = 0; i < expectedHeaders.length; i++) {
-    if (authParams.headers[i] !== expectedHeaders[i]) return false;
+    if (authParams.headers[i] !== expectedHeaders[i]) {
+      if (debugEnabled) {
+        console.log(`[TAP DEBUG] Header mismatch at index ${i}: expected "${expectedHeaders[i]}", got "${authParams.headers[i]}"`);
+      }
+      return false;
+    }
   }
 
   // Lookup agent key from registry
   const agentKey = await registry.lookupAgentKey(agentKeyId);
-  if (!agentKey) return false;
+  if (!agentKey) {
+    if (debugEnabled) {
+      console.log(`[TAP DEBUG] Agent key not found in registry for keyId: ${agentKeyId}`);
+    }
+    return false;
+  }
+
+  if (debugEnabled) {
+    console.log("[TAP DEBUG] Found agent key:", {
+      keyId: agentKey.keyId,
+      publicKeyLength: agentKey.publicKey.length,
+      publicKeyPreview: agentKey.publicKey.substring(0, 20) + "...",
+    });
+  }
 
   // Check expiration (expiresAt is in milliseconds, Date.now() returns milliseconds)
   if (agentKey.expiresAt && agentKey.expiresAt < Date.now()) {
+    if (debugEnabled) {
+      console.log(`[TAP DEBUG] Agent key expired: expiresAt=${agentKey.expiresAt}, now=${Date.now()}`);
+    }
     return false;
   }
 
@@ -131,16 +197,34 @@ export async function verifyAgentSignature(
   let publicKey: Uint8Array;
   try {
     publicKey = decodePublicKey(agentKey.publicKey);
-  } catch {
+    if (debugEnabled) {
+      console.log("[TAP DEBUG] Successfully decoded public key, length:", publicKey.length);
+    }
+  } catch (error) {
+    if (debugEnabled) {
+      console.log("[TAP DEBUG] Failed to decode public key:", error);
+    }
     return false;
   }
 
   // Reconstruct the signature base string
   const baseString = reconstructSignatureBaseString(req, authParams);
+  if (debugEnabled) {
+    console.log("[TAP DEBUG] Reconstructed base string:");
+    console.log(baseString.split("\n").map((line, i) => `  ${i + 1}. ${line}`).join("\n"));
+  }
 
   // Verify the signature
   const message = new TextEncoder().encode(baseString);
   const sigBytes = Buffer.from(authParams.signature, "base64");
+  if (debugEnabled) {
+    console.log("[TAP DEBUG] Signature bytes length:", sigBytes.length);
+  }
 
-  return nacl.sign.detached.verify(message, sigBytes, publicKey);
+  const isValid = nacl.sign.detached.verify(message, sigBytes, publicKey);
+  if (debugEnabled) {
+    console.log(`[TAP DEBUG] Signature verification result: ${isValid ? "✅ VALID" : "❌ INVALID"}`);
+  }
+  
+  return isValid;
 }

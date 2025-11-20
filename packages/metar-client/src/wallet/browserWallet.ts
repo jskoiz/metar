@@ -23,7 +23,7 @@ interface BrowserWalletAdapter {
  * @example
  * ```typescript
  * import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
- * import { createBrowserWallet } from "@metar/meter-client";
+ * import { createBrowserWallet } from "@metar/metar-client";
  *
  * const phantomAdapter = new PhantomWalletAdapter();
  * await phantomAdapter.connect();

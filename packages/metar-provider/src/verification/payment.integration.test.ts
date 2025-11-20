@@ -27,9 +27,9 @@ import {
 import { verifyPayment } from "./payment.js";
 import { PaymentHeaders, PaymentMemo } from "@metar/shared-types";
 import { createConnection, getUSDCMint, MEMO_PROGRAM_ID } from "@metar/shared-config";
-import { buildUSDCTransfer } from "@metar/meter-client";
-import { sendPayment } from "@metar/meter-client";
-import { createNodeWallet } from "@metar/meter-client";
+import { buildUSDCTransfer } from "@metar/metar-client";
+import { sendPayment } from "@metar/metar-client";
+import { createNodeWallet } from "@metar/metar-client";
 
 // Skip integration tests if SKIP_INTEGRATION_TESTS env var is set
 const skipIntegration = process.env.SKIP_INTEGRATION_TESTS === "true";

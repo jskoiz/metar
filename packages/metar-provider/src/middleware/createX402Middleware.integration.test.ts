@@ -24,7 +24,7 @@ import { AgentKey } from "@metar/shared-types";
 import { createX402Middleware, MiddlewareOptions, RoutePricingConfig } from "./createX402Middleware.js";
 import { AgentKeyRegistry } from "../verification/tap.js";
 import { createConnection, getUSDCMint } from "@metar/shared-config";
-import { buildUSDCTransfer, sendPayment, createNodeWallet } from "@metar/meter-client";
+import { buildUSDCTransfer, sendPayment, createNodeWallet } from "@metar/metar-client";
 
 // Skip integration tests if SKIP_INTEGRATION_TESTS env var is set
 const skipIntegration = process.env.SKIP_INTEGRATION_TESTS === "true";

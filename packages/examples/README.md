@@ -11,9 +11,13 @@ The demo includes:
 
 ## Prerequisites
 
-- Node.js 18+ and npm 9+
-- Solana CLI (optional, for airdropping SOL on devnet)
-- A Solana wallet with some SOL for transaction fees (on devnet, you can airdrop)
+- **Node.js** 18+ (v22+ recommended)
+  - Note: Node.js v20.6.0+ and v22+ use `--import` instead of `--loader` flag
+- **npm** 9+
+- **Solana CLI** (optional, for airdropping SOL on devnet)
+- A Solana wallet with:
+  - **SOL** for transaction fees (can airdrop on devnet)
+  - **USDC** balance in an associated token account (for payments)
 
 ## Setup
 
@@ -63,22 +67,40 @@ The server will display:
 
 The client will automatically register itself with the provider when it runs, so no manual registration is needed!
 
+**Option A: Generate New Wallet** (default)
+
 In another terminal, run the client:
 
 ```bash
 npm run demo:client -- --provider http://localhost:3000 --text "Your text to summarize here"
 ```
 
-The client will:
+**Option B: Use Existing Wallet**
+
+If you have a wallet with funds, use the `--private-key` flag:
+
+```bash
+npm run demo:client -- --private-key <your-base58-or-base64-key> --provider http://localhost:3000 --text "Your text to summarize here"
+```
+
+The private key can be in base58 (common in Solana wallets like Phantom) or base64 format. The demo will detect the format automatically.
+
+**What the Client Does:**
 
 1. ✅ Connect to Solana devnet
-2. ✅ Generate a wallet and display public keys
-3. ✅ Look up the price for the route
-4. ✅ Check wallet balance
-5. ✅ Register agent with provider
-6. ✅ Create a MetarClient instance
-7. ✅ Make a paid API request (payment happens automatically)
-8. ✅ Display the results
+2. ✅ Generate or load wallet (Solana keypair for payments)
+3. ✅ Generate **separate TAP agent keypair** (Ed25519 for signatures)
+4. ✅ Look up the price for the route
+5. ✅ Check wallet balance (SOL and USDC)
+6. ✅ Register TAP agent public key with provider
+7. ✅ Create a MetarClient instance
+8. ✅ Make a paid API request (payment happens automatically)
+   - Creates token accounts if needed
+   - Sends USDC payment
+   - Signs request with TAP agent keypair
+9. ✅ Display the results
+
+**Important**: The TAP agent keypair is **separate** from your Solana wallet. This is required by the Trusted Agent Protocol specification.
 
 ## Command Line Options
 
@@ -92,7 +114,15 @@ Options:
   --text <text>        Text to summarize
   --agent-key-id <id>  Agent key ID (default: demo-agent-1)
   --network <network>  Network: devnet or mainnet (default: devnet)
+  --private-key <key>  Private key (base58 or base64 encoded, 64 bytes) to use instead of generating new wallet
   --help, -h           Show help message
+
+Examples:
+  # Generate new wallet
+  npm run demo:client -- --provider http://localhost:3000 --text "Hello world"
+  
+  # Use existing wallet
+  npm run demo:client -- --private-key <base58-key> --provider http://localhost:3000 --text "Hello world"
 ```
 
 ### Demo Provider
@@ -124,11 +154,15 @@ Options:
    ✅ Connected to Solana devnet
 
 🔑 Wallet:
-   Public Key (base58): 7xKXtg2CZ3Qz4qKzJqKzJqKzJqKzJqKzJqKzJqKzJqKz
-   Public Key (base64): d2F0Y2hvdXRmb3J0aGlzYmFzZTY0ZW5jb2RlZHB1YmxpY2tleQ==
+   Solana Wallet (base58): 7xKXtg2CZ3Qz4qKzJqKzJqKzJqKzJqKzJqKzJqKzJqKz
+   Solana Wallet (base64): d2F0Y2hvdXRmb3J0aGlzYmFzZTY0ZW5jb2RlZHB1YmxpY2tleQ==
 
-💡 To register this agent with the provider, use:
-   Register agent: demo-agent-1 -> d2F0Y2hvdXRmb3J0aGlzYmFzZTY0ZW5jb2RlZHB1YmxpY2tleQ==
+💡 Note: TAP agent keypair will be generated separately for signatures
+
+🔧 Step 3: Creating MetarClient
+   Generating TAP agent keypair for signatures...
+   ✅ MetarClient created
+   TAP Agent Public Key (base64): <base64-encoded-ed25519-public-key>
 
 💰 Step 1: Price Lookup
    Fetching price for route 'summarize:v1'...
@@ -199,13 +233,21 @@ Options:
 
 ## Troubleshooting
 
-### "Insufficient balance" error
+### "Insufficient balance" or "no record of a prior credit" error
 
 If you see an insufficient balance error:
 
-1. Make sure you have SOL in your wallet for transaction fees
-2. On devnet, airdrop SOL: `solana airdrop 1 <YOUR_PUBLIC_KEY> --url devnet`
-3. Note: You'll also need USDC tokens for the payment itself. On devnet, you may need to use a faucet or mint tokens if you have mint authority.
+1. **SOL balance**: Make sure you have SOL in your wallet for transaction fees
+   - On devnet, airdrop SOL: `solana airdrop 1 <YOUR_PUBLIC_KEY> --url devnet`
+   
+2. **USDC token account**: The error "no record of a prior credit" means your USDC token account doesn't exist or has no balance
+   - Token accounts are automatically created when needed
+   - You still need SOL for the creation transaction fee
+   - You need USDC balance in the account (at least the payment amount)
+   
+3. **USDC balance**: You need sufficient USDC in your associated token account
+   - On devnet, you may need to use a faucet or mint tokens if you have mint authority
+   - Devnet USDC mint: `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU`
 
 ### "Payment verification failed" error
 
@@ -219,17 +261,39 @@ This usually means:
 
 This usually means:
 
-1. The agent wasn't registered successfully (check the registration step in client output)
-2. The public key format is incorrect
-3. The agent key ID doesn't match
+1. **Agent not registered**: The TAP agent public key wasn't registered successfully
+   - Check the registration step in client output
+   - The demo client automatically registers, but registration can fail
+   
+2. **Wrong public key**: Make sure you're registering the **TAP agent public key**, not the Solana wallet public key
+   - The demo generates a separate Ed25519 keypair for TAP signatures
+   - Look for "TAP Agent Public Key (base64)" in the client output
+   
+3. **Path mismatch**: Signature base string path doesn't match between client and server
+   - This has been fixed in the codebase
+   - Enable debug logging to see the exact mismatch: `DEBUG_TAP=true npm run demo:client ...`
+   
+4. **Key ID mismatch**: Agent key ID in headers doesn't match registered key
 
-The demo client should automatically register itself, but if it fails, you can manually register:
+**Debug**: Enable debug logging to see what's happening:
+
+```bash
+# Client side
+DEBUG_TAP=true npm run demo:client -- --provider http://localhost:3000 --text "Test"
+
+# Provider side (in provider terminal)
+DEBUG_TAP=true npm run demo:provider
+```
+
+**Manual Registration**: If automatic registration fails, manually register the TAP agent public key:
 
 ```bash
 curl -X POST http://localhost:3000/.meter/register-agent \
   -H "Content-Type: application/json" \
-  -d '{"keyId": "demo-agent-1", "publicKey": "YOUR_BASE64_PUBLIC_KEY"}'
+  -d '{"keyId": "demo-agent-1", "publicKey": "<TAP-AGENT-PUBLIC-KEY-BASE64>"}'
 ```
+
+Note: Use the TAP agent public key (shown as "TAP Agent Public Key (base64)"), not the Solana wallet public key.
 
 ### Connection errors
 
@@ -238,6 +302,23 @@ If you can't connect to Solana:
 1. Check your internet connection
 2. Try using a different RPC endpoint (set `SOLANA_DEVNET_RPC_URL` environment variable)
 3. Verify the network setting matches between client and provider
+
+### Node.js compatibility issues
+
+If you see `Error: tsx must be loaded with --import instead of --loader`:
+
+- This has been fixed in the codebase
+- Node.js v20.6.0+ and v22+ require `--import` flag instead of `--loader`
+- Ensure you're using the latest version of the codebase
+
+### Token account creation
+
+Token accounts are automatically created when needed, but you may see errors if:
+
+- The wallet doesn't have SOL for the creation transaction fee
+- Network issues prevent the transaction from completing
+
+**Solution**: Ensure sufficient SOL balance before making payments.
 
 ## Testing on Devnet
 
@@ -266,13 +347,15 @@ To test on devnet:
 ### Payment Flow
 
 1. **Client** requests price from `/.meter/price`
-2. **Client** builds USDC transfer transaction
-3. **Client** sends payment transaction to Solana
-4. **Client** constructs TAP signature for authentication
-5. **Client** makes API request with payment headers
-6. **Provider** verifies payment on-chain
-7. **Provider** verifies agent signature
-8. **Provider** processes request and returns result
+2. **Client** generates separate TAP agent keypair (Ed25519) for signatures
+3. **Client** builds USDC transfer transaction (creates token accounts if needed)
+4. **Client** sends payment transaction to Solana
+5. **Client** constructs TAP signature using agent keypair
+6. **Client** registers TAP agent public key with provider
+7. **Client** makes API request with payment headers and TAP signature
+8. **Provider** verifies payment on-chain
+9. **Provider** verifies TAP agent signature
+10. **Provider** processes request and returns result
 
 ### Key Components
 

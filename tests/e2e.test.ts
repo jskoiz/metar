@@ -27,8 +27,8 @@ import {
   getMint,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { MetarClient, createNodeWallet, clearPriceCache } from "@metar/meter-client";
-import { createX402Middleware, MiddlewareOptions, AgentKeyRegistry } from "@metar/meter-provider";
+import { MetarClient, createNodeWallet, clearPriceCache } from "@metar/metar-client";
+import { createX402Middleware, MiddlewareOptions, AgentKeyRegistry } from "@metar/metar-provider";
 import { AgentKey } from "@metar/shared-types";
 import { priceEndpoint, setPrice } from "@metar/agent-registry";
 import { createConnection, getUSDCMint } from "@metar/shared-config";

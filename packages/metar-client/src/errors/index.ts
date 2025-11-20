@@ -60,7 +60,7 @@ export class InsufficientBalanceError extends PaymentError {
       "Insufficient balance",
       "INSUFFICIENT_BALANCE",
       details,
-      "Ensure your wallet has sufficient USDC balance to cover the payment amount plus transaction fees."
+      "Ensure your wallet has sufficient SOL for transaction fees and USDC balance in an associated token account. If you see 'no record of a prior credit', your USDC token account may not exist - you may need to create it or receive USDC tokens first."
     );
     this.name = "InsufficientBalanceError";
   }

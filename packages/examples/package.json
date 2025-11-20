@@ -7,8 +7,8 @@
     "build": "tsup",
     "build:watch": "tsup --watch",
     "clean": "rm -rf dist",
-    "demo:client": "node --loader tsx src/demo-client.ts",
-    "demo:provider": "node --loader tsx src/demo-provider.ts"
+    "demo:client": "node --import tsx src/demo-client.ts",
+    "demo:provider": "node --import tsx src/demo-provider.ts"
   },
   "dependencies": {
     "@metar/metar-client": "*",
@@ -16,7 +16,9 @@
     "@metar/shared-config": "*",
     "@metar/shared-types": "*",
     "@solana/web3.js": "^1.87.6",
+    "bs58": "^4.0.1",
     "express": "^4.18.2",
+    "tweetnacl": "^1.0.3",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

@@ -1,5 +1,11 @@
 import { Connection, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
-import { getAssociatedTokenAddress, createTransferInstruction, getMint } from "@solana/spl-token";
+import {
+  getAssociatedTokenAddress,
+  createTransferInstruction,
+  getMint,
+  createAssociatedTokenAccountInstruction,
+  getAccount,
+} from "@solana/spl-token";
 import { MEMO_PROGRAM_ID } from "@metar/shared-config";
 import { PaymentMemo } from "@metar/shared-types";
 
@@ -20,7 +26,7 @@ import { PaymentMemo } from "@metar/shared-types";
  * @example
  * ```typescript
  * import { Connection, PublicKey } from "@solana/web3.js";
- * import { buildUSDCTransfer } from "@metar/meter-client";
+ * import { buildUSDCTransfer } from "@metar/metar-client";
  *
  * const connection = new Connection("https://api.devnet.solana.com");
  * const payer = new PublicKey("...");
@@ -56,12 +62,53 @@ export async function buildUSDCTransfer(
   const payerTokenAccount = await getAssociatedTokenAddress(mint, payer);
   const recipientTokenAccount = await getAssociatedTokenAddress(mint, recipient);
 
+  // Check if payer's token account exists, if not, add create instruction
+  let needsCreatePayerAccount = false;
+  try {
+    await getAccount(connection, payerTokenAccount);
+  } catch {
+    needsCreatePayerAccount = true;
+  }
+
+  // Check if recipient's token account exists, if not, add create instruction
+  let needsCreateRecipientAccount = false;
+  try {
+    await getAccount(connection, recipientTokenAccount);
+  } catch {
+    needsCreateRecipientAccount = true;
+  }
+
   // Get mint decimals
   const mintInfo = await getMint(connection, mint);
   const decimals = mintInfo.decimals;
 
   // Convert amount to smallest unit
   const amountInSmallestUnit = Math.floor(amount * Math.pow(10, decimals));
+
+  // Create transaction
+  const transaction = new Transaction();
+
+  // Add create instruction for payer's token account if it doesn't exist
+  if (needsCreatePayerAccount) {
+    const createPayerAccountInstruction = createAssociatedTokenAccountInstruction(
+      payer, // payer (funds the creation)
+      payerTokenAccount, // associatedToken (the account to create)
+      payer, // owner (who owns the token account)
+      mint // mint
+    );
+    transaction.add(createPayerAccountInstruction);
+  }
+
+  // Add create instruction for recipient's token account if it doesn't exist
+  if (needsCreateRecipientAccount) {
+    const createRecipientAccountInstruction = createAssociatedTokenAccountInstruction(
+      payer, // payer (funds the creation)
+      recipientTokenAccount, // associatedToken (the account to create)
+      recipient, // owner (who owns the token account)
+      mint // mint
+    );
+    transaction.add(createRecipientAccountInstruction);
+  }
 
   // Create transfer instruction
   const transferInstruction = createTransferInstruction(
@@ -70,9 +117,7 @@ export async function buildUSDCTransfer(
     payer,
     amountInSmallestUnit
   );
-
-  // Create transaction
-  const transaction = new Transaction().add(transferInstruction);
+  transaction.add(transferInstruction);
 
   // Add memo if provided
   if (memo) {
