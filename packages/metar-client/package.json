@@ -1,0 +1,26 @@
+{
+  "name": "@metar/metar-client",
+  "version": "0.1.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "clean": "rm -rf dist",
+    "test": "tsx src/price/getPrice.test.ts"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.87.6",
+    "@solana/spl-token": "^0.4.1",
+    "tweetnacl": "^1.0.3",
+    "uuid": "^9.0.1"
+  },
+  "peerDependencies": {
+    "@solana/wallet-adapter-base": "^0.9.23"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.2",
+    "tsx": "^4.7.0"
+  }
+}

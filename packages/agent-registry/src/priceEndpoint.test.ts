@@ -1,8 +1,8 @@
 /**
  * Unit tests for priceEndpoint Express route handler.
- * 
+ *
  * Tests the GET /.meter/price endpoint behavior.
- * 
+ *
  * @see {@link file://hackathon/technical-specifications.md#price-lookup-endpoint | Technical Specifications: Price Lookup Endpoint}
  */
 
@@ -11,8 +11,8 @@ import assert from "node:assert";
 import { Request, Response } from "express";
 import { priceEndpoint } from "./priceEndpoint.js";
 import { setPrice, removePrice } from "./priceService.js";
-import { PriceResponse } from "@meter/shared-types";
-import { getUSDCMint } from "@meter/shared-config";
+import { PriceResponse } from "@metar/shared-types";
+import { getUSDCMint } from "@metar/shared-config";
 
 // Mock Express Request object
 function createMockRequest(query: Record<string, string> = {}): Request {
@@ -131,4 +131,3 @@ test("priceEndpoint - handles route parameter as array", () => {
   assert.strictEqual(res.statusCode, 200);
   assert.ok(res.jsonData !== null);
 });
-

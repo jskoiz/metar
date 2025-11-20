@@ -1,16 +1,16 @@
 /**
  * End-to-End Integration Tests for x402 Payment Protocol
- * 
+ *
  * Tests the complete payment flow from client to provider:
  * 1. Provider server with protected route (/api/summarize)
  * 2. Registry/price service for price lookup
- * 3. Client using MeterClient to make paid requests
+ * 3. Client using MetarClient to make paid requests
  * 4. Full payment flow: getPrice -> payment -> request -> verification
  * 5. Error cases: 402 handling, invalid payment, nonce reuse
- * 
+ *
  * Uses Solana devnet for testing.
  * Set SKIP_INTEGRATION_TESTS=true to skip these tests.
- * 
+ *
  * @see {@link file://research/x402-protocol-overview.md | x402 Protocol Overview}
  * @see {@link file://research/x402-implementation-guide.md | Implementation Guide}
  */
@@ -27,11 +27,11 @@ import {
   getMint,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { MeterClient, createNodeWallet, clearPriceCache } from "@meter/meter-client";
-import { createX402Middleware, MiddlewareOptions, AgentKeyRegistry } from "@meter/meter-provider";
-import { AgentKey } from "@meter/shared-types";
-import { priceEndpoint, setPrice } from "@meter/agent-registry";
-import { createConnection, getUSDCMint } from "@meter/shared-config";
+import { MetarClient, createNodeWallet, clearPriceCache } from "@metar/meter-client";
+import { createX402Middleware, MiddlewareOptions, AgentKeyRegistry } from "@metar/meter-provider";
+import { AgentKey } from "@metar/shared-types";
+import { priceEndpoint, setPrice } from "@metar/agent-registry";
+import { createConnection, getUSDCMint } from "@metar/shared-config";
 
 // Skip integration tests if SKIP_INTEGRATION_TESTS env var is set
 const skipIntegration = process.env.SKIP_INTEGRATION_TESTS === "true";
@@ -71,7 +71,7 @@ function startServer(app: Express, port: number): Promise<Server> {
 // Helper to stop Express server
 function stopServer(server: Server): Promise<void> {
   return new Promise((resolve, reject) => {
-    server.close((err) => {
+    server.close(err => {
       if (err) reject(err);
       else resolve();
     });
@@ -119,14 +119,7 @@ async function fundAccountWithUSDC(
   const decimals = mintInfo.decimals;
   const amountInSmallestUnit = BigInt(Math.floor(amount * Math.pow(10, decimals)));
 
-  await mintTo(
-    connection,
-    payer,
-    usdcMint,
-    payerTokenAccount.address,
-    payer,
-    amountInSmallestUnit
-  );
+  await mintTo(connection, payer, usdcMint, payerTokenAccount.address, payer, amountInSmallestUnit);
 
   // Transfer tokens to recipient
   const { transfer } = await import("@solana/spl-token");
@@ -216,7 +209,7 @@ test("E2E: Full payment flow from client to provider", { skip: skipIntegration }
 
   // Add price endpoint to provider server (client will look for prices here)
   providerApp.get("/.meter/price", priceEndpoint);
-  
+
   providerApp.get(
     `/api/${ROUTE_ID.split(":")[0]}`,
     createX402Middleware(middlewareOptions),
@@ -237,8 +230,8 @@ test("E2E: Full payment flow from client to provider", { skip: skipIntegration }
 
     // Create client
     const wallet = createNodeWallet(clientKeypair);
-    
-    const client = new MeterClient({
+
+    const client = new MetarClient({
       providerBaseURL: PROVIDER_BASE_URL,
       agentKeyId: agentKeyId,
       agentPrivateKey: new Uint8Array(agentKeypair.secretKey),
@@ -588,4 +581,3 @@ test("E2E: Nonce reuse rejection", { skip: skipIntegration }, async () => {
     await stopServer(registryServer);
   }
 });
-

@@ -23,4 +23,3 @@ export function createConnection(network: "devnet" | "mainnet" = "devnet"): Conn
 export function getUSDCMint(network: "devnet" | "mainnet" = "devnet"): PublicKey {
   return new PublicKey(SOLANA_NETWORKS[network].usdcMint);
 }
-

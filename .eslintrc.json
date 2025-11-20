@@ -21,4 +21,3 @@
   },
   "ignorePatterns": ["dist/", "node_modules/", "*.js"]
 }
-

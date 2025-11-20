@@ -15,15 +15,15 @@ export function RouteMetrics() {
 
   useEffect(() => {
     fetch("/api/route-metrics")
-      .then((res) => {
+      .then(res => {
         if (!res.ok) throw new Error("Failed to fetch route metrics");
         return res.json();
       })
-      .then((data) => {
+      .then(data => {
         setMetrics(data);
         setLoading(false);
       })
-      .catch((err) => {
+      .catch(err => {
         setError(err.message);
         setLoading(false);
       });
@@ -56,32 +56,26 @@ export function RouteMetrics() {
     );
   }
 
-  const maxRequests = Math.max(...metrics.map((m) => m.request_count), 1);
+  const maxRequests = Math.max(...metrics.map(m => m.request_count), 1);
 
   return (
     <div className="route-metrics">
       <h3>Usage by Route</h3>
       <div className="metrics-list">
-        {metrics.map((metric) => (
+        {metrics.map(metric => (
           <div key={metric.route_id} className="route-metric-card">
             <div className="route-header">
               <h4>{metric.route_id}</h4>
-              <div className="request-count-badge">
-                {metric.request_count} requests
-              </div>
+              <div className="request-count-badge">{metric.request_count} requests</div>
             </div>
             <div className="metric-details">
               <div className="metric-item">
                 <span className="metric-label">Total Revenue:</span>
-                <span className="metric-value">
-                  {metric.total_revenue.toFixed(4)} USDC
-                </span>
+                <span className="metric-value">{metric.total_revenue.toFixed(4)} USDC</span>
               </div>
               <div className="metric-item">
                 <span className="metric-label">Average Amount:</span>
-                <span className="metric-value">
-                  {metric.avg_amount.toFixed(4)} USDC
-                </span>
+                <span className="metric-value">{metric.avg_amount.toFixed(4)} USDC</span>
               </div>
               <div className="metric-item">
                 <span className="metric-label">Unique Payers:</span>
@@ -102,4 +96,3 @@ export function RouteMetrics() {
     </div>
   );
 }
-

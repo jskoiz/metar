@@ -40,15 +40,15 @@ export function UsageRecordsTable({ filters }: UsageRecordsTableProps) {
     }
 
     fetch(`/api/usage-records?${params.toString()}`)
-      .then((res) => {
+      .then(res => {
         if (!res.ok) throw new Error("Failed to fetch usage records");
         return res.json();
       })
-      .then((data) => {
+      .then(data => {
         setRecords(data);
         setLoading(false);
       })
-      .catch((err) => {
+      .catch(err => {
         setError(err.message);
         setLoading(false);
       });
@@ -108,7 +108,7 @@ export function UsageRecordsTable({ filters }: UsageRecordsTableProps) {
               </tr>
             </thead>
             <tbody>
-              {records.map((record) => (
+              {records.map(record => (
                 <tr key={record.id}>
                   <td>{record.route_id}</td>
                   <td>{record.payer || "N/A"}</td>
@@ -139,4 +139,3 @@ export function UsageRecordsTable({ filters }: UsageRecordsTableProps) {
     </div>
   );
 }
-

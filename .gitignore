@@ -46,3 +46,6 @@ coverage/
 # yarn.lock
 # pnpm-lock.yaml
 
+
+# Private Documentation
+private_docs/

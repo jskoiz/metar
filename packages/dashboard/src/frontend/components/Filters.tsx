@@ -24,14 +24,14 @@ export function Filters({ onFilterChange }: FiltersProps) {
   useEffect(() => {
     // Fetch available routes and payers
     Promise.all([
-      fetch("/api/routes").then((res) => res.json()),
-      fetch("/api/payers").then((res) => res.json()),
+      fetch("/api/routes").then(res => res.json()),
+      fetch("/api/payers").then(res => res.json()),
     ])
       .then(([routesData, payersData]) => {
         setRoutes(routesData);
         setPayers(payersData);
       })
-      .catch((err) => console.error("Failed to fetch filter options:", err));
+      .catch(err => console.error("Failed to fetch filter options:", err));
   }, []);
 
   const handleChange = (field: keyof FilterState, value: string) => {
@@ -60,10 +60,10 @@ export function Filters({ onFilterChange }: FiltersProps) {
           <select
             id="route-filter"
             value={filters.routeId}
-            onChange={(e) => handleChange("routeId", e.target.value)}
+            onChange={e => handleChange("routeId", e.target.value)}
           >
             <option value="">All Routes</option>
-            {routes.map((route) => (
+            {routes.map(route => (
               <option key={route} value={route}>
                 {route}
               </option>
@@ -76,10 +76,10 @@ export function Filters({ onFilterChange }: FiltersProps) {
           <select
             id="payer-filter"
             value={filters.payer}
-            onChange={(e) => handleChange("payer", e.target.value)}
+            onChange={e => handleChange("payer", e.target.value)}
           >
             <option value="">All Payers</option>
-            {payers.map((payer) => (
+            {payers.map(payer => (
               <option key={payer} value={payer}>
                 {payer}
               </option>
@@ -93,7 +93,7 @@ export function Filters({ onFilterChange }: FiltersProps) {
             id="start-date"
             type="date"
             value={filters.startDate}
-            onChange={(e) => handleChange("startDate", e.target.value)}
+            onChange={e => handleChange("startDate", e.target.value)}
           />
         </div>
 
@@ -103,7 +103,7 @@ export function Filters({ onFilterChange }: FiltersProps) {
             id="end-date"
             type="date"
             value={filters.endDate}
-            onChange={(e) => handleChange("endDate", e.target.value)}
+            onChange={e => handleChange("endDate", e.target.value)}
           />
         </div>
       </div>
@@ -114,4 +114,3 @@ export function Filters({ onFilterChange }: FiltersProps) {
     </div>
   );
 }
-

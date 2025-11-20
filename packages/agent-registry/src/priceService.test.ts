@@ -9,8 +9,8 @@
 import { test } from "node:test";
 import assert from "node:assert";
 import { getPrice, setPrice, removePrice, getAllRouteIds } from "./priceService.js";
-import { PriceResponse } from "@meter/shared-types";
-import { getUSDCMint } from "@meter/shared-config";
+import { PriceResponse } from "@metar/shared-types";
+import { getUSDCMint } from "@metar/shared-config";
 
 // Test data
 const testPriceResponse: PriceResponse = {

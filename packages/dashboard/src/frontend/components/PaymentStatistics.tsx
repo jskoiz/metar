@@ -19,15 +19,15 @@ export function PaymentStatistics() {
 
   useEffect(() => {
     fetch("/api/statistics")
-      .then((res) => {
+      .then(res => {
         if (!res.ok) throw new Error("Failed to fetch statistics");
         return res.json();
       })
-      .then((data) => {
+      .then(data => {
         setStats(data);
         setLoading(false);
       })
-      .catch((err) => {
+      .catch(err => {
         setError(err.message);
         setLoading(false);
       });
@@ -55,8 +55,8 @@ export function PaymentStatistics() {
     return null;
   }
 
-  const maxRevenue = Math.max(...stats.dailyStats.map((d) => d.revenue || 0), 1);
-  const maxCount = Math.max(...stats.dailyStats.map((d) => d.count || 0), 1);
+  const maxRevenue = Math.max(...stats.dailyStats.map(d => d.revenue || 0), 1);
+  const maxCount = Math.max(...stats.dailyStats.map(d => d.count || 0), 1);
 
   return (
     <div className="payment-statistics">
@@ -68,9 +68,7 @@ export function PaymentStatistics() {
         </div>
         <div className="stat-card">
           <div className="stat-label">Total Revenue</div>
-          <div className="stat-value">
-            {stats.totalRevenue.toFixed(4)} USDC
-          </div>
+          <div className="stat-value">{stats.totalRevenue.toFixed(4)} USDC</div>
         </div>
       </div>
 
@@ -78,7 +76,7 @@ export function PaymentStatistics() {
         <h4>Daily Activity (Last 30 Days)</h4>
         <div className="chart-container">
           <div className="chart-bars">
-            {stats.dailyStats.map((day) => (
+            {stats.dailyStats.map(day => (
               <div key={day.date} className="chart-bar-group">
                 <div className="chart-bar-wrapper">
                   <div
@@ -120,4 +118,3 @@ export function PaymentStatistics() {
     </div>
   );
 }
-

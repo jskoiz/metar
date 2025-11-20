@@ -6,8 +6,8 @@
  * @see {@link file://hackathon/technical-specifications.md#price-lookup-endpoint | Technical Specifications: Price Lookup Endpoint}
  */
 
-import { PriceResponse } from "@meter/shared-types";
-import { getUSDCMint } from "@meter/shared-config";
+import { PriceResponse } from "@metar/shared-types";
+import { getUSDCMint } from "@metar/shared-config";
 
 const prices = new Map<string, PriceResponse>();
 

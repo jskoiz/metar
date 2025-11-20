@@ -1,22 +1,22 @@
 #!/usr/bin/env node
 /**
  * Demo Provider Server
- * 
+ *
  * Simple Express server demonstrating x402 payment protection:
  * - Protected /api/summarize route
  * - Price endpoint at /.meter/price
  * - Mock summary generation
- * 
+ *
  * Usage:
  *   npm run demo:provider
  */
 
 import express from "express";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
-import { createX402Middleware } from "@meter/meter-provider";
-import { createConnection, getUSDCMint } from "@meter/shared-config";
-import { AgentKeyRegistry, AgentKey } from "@meter/shared-types";
-import { PriceResponse } from "@meter/shared-types";
+import { createX402Middleware } from "@metar/meter-provider";
+import { createConnection, getUSDCMint } from "@metar/shared-config";
+import { AgentKeyRegistry, AgentKey } from "@metar/shared-types";
+import { PriceResponse } from "@metar/shared-types";
 
 // Simple in-memory agent registry for demo
 class DemoAgentRegistry implements AgentKeyRegistry {
@@ -49,7 +49,7 @@ function registerDemoAgent(keyId: string, publicKeyBase64: string): void {
 function generateMockSummary(text: string): string {
   const words = text.split(/\s+/);
   const wordCount = words.length;
-  
+
   // Simple mock summary: first 20 words + "..."
   const summary = words.slice(0, 20).join(" ");
   return `${summary}... [Summary of ${wordCount} words]`;
@@ -61,12 +61,7 @@ async function createDemoServer(options: {
   price?: number;
   payTo?: string;
 }): Promise<void> {
-  const {
-    port = 3000,
-    network = "devnet",
-    price = 0.03,
-    payTo,
-  } = options;
+  const { port = 3000, network = "devnet", price = 0.03, payTo } = options;
 
   const app = express();
   app.use(express.json());
@@ -76,9 +71,7 @@ async function createDemoServer(options: {
   const usdcMint = getUSDCMint(network);
 
   // Generate provider wallet if not provided
-  const providerKeypair = payTo
-    ? { publicKey: new PublicKey(payTo) }
-    : Keypair.generate();
+  const providerKeypair = payTo ? { publicKey: new PublicKey(payTo) } : Keypair.generate();
   const providerAddress = providerKeypair.publicKey.toBase58();
 
   console.log("🚀 x402 Demo Provider Server");
@@ -92,8 +85,8 @@ async function createDemoServer(options: {
 
   // Price endpoint
   app.get("/.meter/price", (req, res) => {
-    const routeId = req.query.route as string || "summarize:v1";
-    
+    const routeId = (req.query.route as string) || "summarize:v1";
+
     const priceResponse: PriceResponse = {
       price,
       currency: "USDC",
@@ -133,7 +126,7 @@ async function createDemoServer(options: {
 
       // Access payment info from middleware
       const payment = (req as any).payment;
-      
+
       res.json({
         summary,
         metadata: {
@@ -148,7 +141,7 @@ async function createDemoServer(options: {
   // Agent registration endpoint (for demo purposes)
   app.post("/.meter/register-agent", express.json(), (req, res) => {
     const { keyId, publicKey } = req.body;
-    
+
     if (!keyId || !publicKey) {
       return res.status(400).json({
         error: "Bad Request",
@@ -157,7 +150,7 @@ async function createDemoServer(options: {
     }
 
     registerDemoAgent(keyId, publicKey);
-    
+
     res.json({
       status: "ok",
       message: `Agent ${keyId} registered successfully`,
@@ -246,9 +239,8 @@ export { createDemoServer, registerDemoAgent, agentRegistry };
 // Run server if executed directly
 if (require.main === module) {
   const options = parseArgs();
-  createDemoServer(options).catch((error) => {
+  createDemoServer(options).catch(error => {
     console.error("💥 Server failed to start:", error);
     process.exit(1);
   });
 }
-

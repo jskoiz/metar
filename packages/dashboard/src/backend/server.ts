@@ -1,16 +1,16 @@
 /**
  * Dashboard Backend API Server
- * 
+ *
  * Express API server for dashboard usage records and statistics.
  * Provides endpoints for querying usage records with filtering, pagination,
  * and aggregate statistics.
- * 
+ *
  * @see {@link file://hackathon/technical-specifications.md | Technical Specifications}
  */
 
 import express, { Request, Response } from "express";
 import { Database } from "sqlite3";
-import { UsageRecord } from "@meter/shared-types";
+import { UsageRecord } from "@metar/shared-types";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -46,7 +46,7 @@ function initializeDatabase(db: Database): Promise<void> {
           req_hash TEXT,
           agent_key_id TEXT
         )`,
-        (err) => {
+        err => {
           if (err) {
             reject(err);
             return;
@@ -54,53 +54,41 @@ function initializeDatabase(db: Database): Promise<void> {
         }
       );
 
-      db.run(
-        `CREATE INDEX IF NOT EXISTS idx_tx_sig ON usage_records(tx_sig)`,
-        (err) => {
-          if (err) {
-            reject(err);
-            return;
-          }
+      db.run(`CREATE INDEX IF NOT EXISTS idx_tx_sig ON usage_records(tx_sig)`, err => {
+        if (err) {
+          reject(err);
+          return;
         }
-      );
+      });
 
-      db.run(
-        `CREATE INDEX IF NOT EXISTS idx_route_id ON usage_records(route_id)`,
-        (err) => {
-          if (err) {
-            reject(err);
-            return;
-          }
+      db.run(`CREATE INDEX IF NOT EXISTS idx_route_id ON usage_records(route_id)`, err => {
+        if (err) {
+          reject(err);
+          return;
         }
-      );
+      });
 
-      db.run(
-        `CREATE INDEX IF NOT EXISTS idx_payer ON usage_records(payer)`,
-        (err) => {
-          if (err) {
-            reject(err);
-            return;
-          }
+      db.run(`CREATE INDEX IF NOT EXISTS idx_payer ON usage_records(payer)`, err => {
+        if (err) {
+          reject(err);
+          return;
         }
-      );
+      });
 
-      db.run(
-        `CREATE INDEX IF NOT EXISTS idx_timestamp ON usage_records(timestamp)`,
-        (err) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve();
+      db.run(`CREATE INDEX IF NOT EXISTS idx_timestamp ON usage_records(timestamp)`, err => {
+        if (err) {
+          reject(err);
+          return;
         }
-      );
+        resolve();
+      });
     });
   });
 }
 
 // Initialize database on startup (only if running as main module)
 if (require.main === module) {
-  initializeDatabase(db).catch((err) => {
+  initializeDatabase(db).catch(err => {
     console.error("Failed to initialize database:", err);
     process.exit(1);
   });
@@ -175,7 +163,7 @@ app.get("/health", (_req, res) => {
 
 /**
  * GET /api/usage - List usage records with filtering and pagination
- * 
+ *
  * Query parameters:
  * - routeId?: Filter by route identifier
  * - payer?: Filter by payer wallet address
@@ -251,7 +239,7 @@ app.get("/api/usage", (req: Request, res: Response) => {
 
   // Get total count for pagination metadata
   const countQuery = `SELECT COUNT(*) as total FROM usage_records ${whereClause}`;
-  
+
   db.get(countQuery, params, (err, countRow: any) => {
     if (err) {
       console.error("Database error:", err);
@@ -304,35 +292,31 @@ app.get("/api/usage", (req: Request, res: Response) => {
 app.get("/api/usage/:id", (req: Request, res: Response) => {
   const { id } = req.params;
 
-  db.get(
-    "SELECT * FROM usage_records WHERE id = ?",
-    [id],
-    (err, row) => {
-      if (err) {
-        console.error("Database error:", err);
-        res.status(500).json({
-          error: "Internal Server Error",
-          message: "Failed to query database",
-        });
-        return;
-      }
-
-      if (!row) {
-        res.status(404).json({
-          error: "Not Found",
-          message: `Usage record with id ${id} not found`,
-        });
-        return;
-      }
-
-      res.json(rowToUsageRecord(row));
+  db.get("SELECT * FROM usage_records WHERE id = ?", [id], (err, row) => {
+    if (err) {
+      console.error("Database error:", err);
+      res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to query database",
+      });
+      return;
     }
-  );
+
+    if (!row) {
+      res.status(404).json({
+        error: "Not Found",
+        message: `Usage record with id ${id} not found`,
+      });
+      return;
+    }
+
+    res.json(rowToUsageRecord(row));
+  });
 });
 
 /**
  * GET /api/stats - Aggregate statistics
- * 
+ *
  * Returns:
  * - totalPayments: Total number of payments
  * - totalRevenue: Sum of all payment amounts
@@ -431,34 +415,34 @@ app.get("/api/stats", (_req: Request, res: Response) => {
 app.get("/api/usage-records", async (req: Request, res: Response) => {
   try {
     const { route_id, payer, start_date, end_date, limit = "100", offset = "0" } = req.query;
-    
+
     const conditions: string[] = [];
     const params: any[] = [];
-    
+
     if (route_id) {
       conditions.push("route_id = ?");
       params.push(route_id);
     }
-    
+
     if (payer) {
       conditions.push("payer = ?");
       params.push(payer);
     }
-    
+
     if (start_date) {
       conditions.push("timestamp >= ?");
       params.push(parseInt(start_date as string));
     }
-    
+
     if (end_date) {
       conditions.push("timestamp <= ?");
       params.push(parseInt(end_date as string));
     }
-    
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
     const limitValue = parseInt(limit as string, 10) || 100;
     const offsetValue = parseInt(offset as string, 10) || 0;
-    
+
     const query = `
       SELECT * FROM usage_records 
       ${whereClause}
@@ -466,7 +450,7 @@ app.get("/api/usage-records", async (req: Request, res: Response) => {
       LIMIT ? OFFSET ?
     `;
     const queryParams = [...params, limitValue, offsetValue];
-    
+
     const rows = await dbAll(query, queryParams);
     const legacyRows = rows.map((row: any) => usageRecordToLegacy(rowToUsageRecord(row)));
     res.json(legacyRows);
@@ -483,11 +467,14 @@ app.get("/api/usage-records", async (req: Request, res: Response) => {
 app.get("/api/statistics", async (_req: Request, res: Response) => {
   try {
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    
+
     const [totalPayments, totalRevenue, dailyStats] = await Promise.all([
       dbAll("SELECT COUNT(*) as count FROM usage_records WHERE status = 'consumed'"),
-      dbAll("SELECT COALESCE(SUM(amount), 0) as total FROM usage_records WHERE status = 'consumed'"),
-      dbAll(`
+      dbAll(
+        "SELECT COALESCE(SUM(amount), 0) as total FROM usage_records WHERE status = 'consumed'"
+      ),
+      dbAll(
+        `
         SELECT 
           DATE(timestamp / 1000, 'unixepoch') as date,
           COUNT(*) as count,
@@ -497,9 +484,11 @@ app.get("/api/statistics", async (_req: Request, res: Response) => {
         GROUP BY DATE(timestamp / 1000, 'unixepoch')
         ORDER BY date DESC
         LIMIT 30
-      `, [thirtyDaysAgo]),
+      `,
+        [thirtyDaysAgo]
+      ),
     ]);
-    
+
     res.json({
       totalPayments: totalPayments[0]?.count || 0,
       totalRevenue: totalRevenue[0]?.total || 0,
@@ -533,7 +522,7 @@ app.get("/api/route-metrics", async (_req: Request, res: Response) => {
       GROUP BY route_id
       ORDER BY request_count DESC
     `);
-    
+
     res.json(rows);
   } catch (err) {
     console.error("Database error:", err);
@@ -559,7 +548,9 @@ app.get("/api/routes", async (_req: Request, res: Response) => {
  */
 app.get("/api/payers", async (_req: Request, res: Response) => {
   try {
-    const rows = await dbAll("SELECT DISTINCT payer FROM usage_records WHERE payer IS NOT NULL ORDER BY payer");
+    const rows = await dbAll(
+      "SELECT DISTINCT payer FROM usage_records WHERE payer IS NOT NULL ORDER BY payer"
+    );
     res.json(rows.map((r: any) => r.payer));
   } catch (err) {
     console.error("Database error:", err);
@@ -575,4 +566,3 @@ if (require.main === module) {
 }
 
 export { app, db };
-

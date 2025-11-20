@@ -1,6 +1,6 @@
 /**
  * Type validation tests for shared types.
- * 
+ *
  * These tests verify that objects conform to the expected interface structures
  * and validate required fields, optional fields, and type constraints.
  */
@@ -53,9 +53,7 @@ function isValidPaymentHeaders(obj: unknown): obj is PaymentHeaders {
 /**
  * Type guard to validate PaymentRequiredResponse
  */
-function isValidPaymentRequiredResponse(
-  obj: unknown
-): obj is PaymentRequiredResponse {
+function isValidPaymentRequiredResponse(obj: unknown): obj is PaymentRequiredResponse {
   if (typeof obj !== "object" || obj === null) return false;
   const p = obj as Record<string, unknown>;
   return (
@@ -68,8 +66,7 @@ function isValidPaymentRequiredResponse(
     typeof p.chain === "string" &&
     (p.message === undefined || typeof p.message === "string") &&
     (p.tips === undefined ||
-      (Array.isArray(p.tips) &&
-        p.tips.every((tip) => typeof tip === "string")))
+      (Array.isArray(p.tips) && p.tips.every(tip => typeof tip === "string")))
   );
 }
 
@@ -87,9 +84,7 @@ function isValidUsageRecord(obj: unknown): obj is UsageRecord {
     typeof p.amount === "number" &&
     typeof p.timestamp === "number" &&
     typeof p.nonce === "string" &&
-    (p.status === "authorized" ||
-      p.status === "consumed" ||
-      p.status === "refunded") &&
+    (p.status === "authorized" || p.status === "consumed" || p.status === "refunded") &&
     (p.reqHash === undefined || typeof p.reqHash === "string") &&
     (p.agentKeyId === undefined || typeof p.agentKeyId === "string")
   );
@@ -101,11 +96,7 @@ function isValidUsageRecord(obj: unknown): obj is UsageRecord {
 function isValidAgentKey(obj: unknown): obj is AgentKey {
   if (typeof obj !== "object" || obj === null) return false;
   const p = obj as Record<string, unknown>;
-  if (
-    typeof p.keyId !== "string" ||
-    typeof p.publicKey !== "string" ||
-    p.algorithm !== "ed25519"
-  ) {
+  if (typeof p.keyId !== "string" || typeof p.publicKey !== "string" || p.algorithm !== "ed25519") {
     return false;
   }
   if (p.expiresAt !== undefined && typeof p.expiresAt !== "number") {
@@ -118,8 +109,7 @@ function isValidAgentKey(obj: unknown): obj is AgentKey {
       (m.agentName !== undefined && typeof m.agentName !== "string") ||
       (m.issuer !== undefined && typeof m.issuer !== "string") ||
       (m.capabilities !== undefined &&
-        (!Array.isArray(m.capabilities) ||
-          !m.capabilities.every((cap) => typeof cap === "string")))
+        (!Array.isArray(m.capabilities) || !m.capabilities.every(cap => typeof cap === "string")))
     ) {
       return false;
     }
@@ -209,8 +199,7 @@ if (
 }
 
 if (
-  test("PriceResponse - invalid (missing required)", () =>
-    !isValidPriceResponse({ price: 0.03 }))
+  test("PriceResponse - invalid (missing required)", () => !isValidPriceResponse({ price: 0.03 }))
 ) {
   passed++;
 } else {
@@ -228,10 +217,7 @@ const validPaymentHeaders: PaymentHeaders = {
   agentKeyId: "agent_12345",
 };
 
-if (
-  test("PaymentHeaders - valid object", () =>
-    isValidPaymentHeaders(validPaymentHeaders))
-) {
+if (test("PaymentHeaders - valid object", () => isValidPaymentHeaders(validPaymentHeaders))) {
   passed++;
 } else {
   failed++;
@@ -303,9 +289,7 @@ const validUsageRecord: UsageRecord = {
   status: "authorized",
 };
 
-if (
-  test("UsageRecord - valid object", () => isValidUsageRecord(validUsageRecord))
-) {
+if (test("UsageRecord - valid object", () => isValidUsageRecord(validUsageRecord))) {
   passed++;
 } else {
   failed++;
@@ -319,7 +303,7 @@ if (
       "refunded",
     ];
     return statuses.every(
-      (status) =>
+      status =>
         isValidUsageRecord({ ...validUsageRecord, status }) &&
         !isValidUsageRecord({ ...validUsageRecord, status: "invalid" as any })
     );
@@ -390,10 +374,7 @@ const validNonceRecord: NonceRecord = {
   consumed: false,
 };
 
-if (
-  test("NonceRecord - valid object", () =>
-    isValidNonceRecord(validNonceRecord))
-) {
+if (test("NonceRecord - valid object", () => isValidNonceRecord(validNonceRecord))) {
   passed++;
 } else {
   failed++;
@@ -416,9 +397,7 @@ const validPaymentMemo: PaymentMemo = {
   amount: 0.03,
 };
 
-if (
-  test("PaymentMemo - valid object", () => isValidPaymentMemo(validPaymentMemo))
-) {
+if (test("PaymentMemo - valid object", () => isValidPaymentMemo(validPaymentMemo))) {
   passed++;
 } else {
   failed++;
@@ -442,4 +421,3 @@ console.log(`Total: ${passed + failed}`);
 if (failed > 0) {
   process.exit(1);
 }
-

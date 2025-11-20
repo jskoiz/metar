@@ -1,10 +1,15 @@
-# Meter: x402 Payment Protocol SDK
+# Metar: x402 Payment Protocol SDK
 
-A complete TypeScript SDK implementing the x402 payment protocol for micropayments using Solana and USDC, with integrated Trusted Agent Protocol (TAP) authentication.
+**Pay-Per-Call SDK for the x402 Protocol**
+
+Metar is a complete SDK that enables pay-per-call APIs using the x402 payment protocol on Solana. It provides one-line middleware for providers and automatic payment orchestration for clients, eliminating the need for complex billing infrastructure.
+
+**📖 [Technical Overview](./TECHNICAL_OVERVIEW.md)** - Quick technical overview for hackathon judges  
+**🚀 [Quick Start Guide](./QUICKSTART.md)** - Step-by-step tutorial to get started
 
 ## Overview
 
-Meter enables micropayment-protected APIs where clients pay per request using cryptocurrency. Built on Solana blockchain with USDC stablecoin, it provides a complete solution for providers to monetize API endpoints and for clients to make paid requests programmatically.
+Metar enables micropayment-protected APIs where clients pay per request using cryptocurrency. Built on Solana blockchain with USDC stablecoin, it provides a complete solution for providers to monetize API endpoints and for clients to make paid requests programmatically.
 
 ### Key Features
 
@@ -21,7 +26,7 @@ Meter enables micropayment-protected APIs where clients pay per request using cr
 ┌─────────────────────────────────────────────────────────────┐
 │                         CLIENT                              │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │ MeterClient (High-level SDK)                         │  │
+│  │ MetarClient (High-level SDK)                          │  │
 │  │  • Price lookup                                      │  │
 │  │  • Payment transaction creation                      │  │
 │  │  • TAP signature generation                          │  │
@@ -64,14 +69,14 @@ This monorepo uses npm workspaces and contains the following packages:
 
 ### Core Packages
 
-- **`packages/meter-client`** - Client SDK for making paid API requests
+- **`packages/metar-client`** - Client SDK for making paid API requests
   - Wallet integration (browser & Node.js)
   - USDC payment transaction construction
   - TAP signature generation
   - Price lookup and caching
-  - High-level `MeterClient` class
+  - High-level `MetarClient` class
 
-- **`packages/meter-provider`** - Express middleware for payment verification
+- **`packages/metar-provider`** - Express middleware for payment verification
   - x402 middleware with full verification pipeline
   - On-chain payment validation
   - TAP signature verification
@@ -91,7 +96,7 @@ This monorepo uses npm workspaces and contains the following packages:
   - Real-time payment statistics
   - Route metrics and filtering
 
-- **`packages/facilitator`** - (Reserved) Facilitator mode for delegated verification
+- **`packages/facilitator`** - Facilitator mode for delegated verification
 
 - **`packages/examples`** - Complete demo implementation
   - Demo client showing full payment flow
@@ -110,6 +115,17 @@ This monorepo uses npm workspaces and contains the following packages:
 
 ## Getting Started
 
+**🚀 New to Metar?** Start with the [Quick Start Guide](./QUICKSTART.md) for a step-by-step tutorial.
+
+**⚡ Quick Demo**: See Metar in action:
+```bash
+# Terminal 1: Start provider
+cd packages/examples && npm run demo:provider
+
+# Terminal 2: Run client
+cd packages/examples && npm run demo:client -- --provider http://localhost:3000 --text "Your text"
+```
+
 ### Prerequisites
 
 - Node.js >= 18.0.0
@@ -121,7 +137,7 @@ This monorepo uses npm workspaces and contains the following packages:
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd meter
+cd 402
 
 # Install all dependencies
 npm install
@@ -139,8 +155,8 @@ Protect your Express endpoints with payment verification:
 ```typescript
 import express from "express";
 import { Connection } from "@solana/web3.js";
-import { createX402Middleware } from "@meter/meter-provider";
-import { createConnection, getUSDCMint } from "@meter/shared-config";
+import { createX402Middleware } from "@metar/metar-provider";
+import { createConnection, getUSDCMint } from "@metar/shared-config";
 
 const app = express();
 const connection = createConnection("devnet");
@@ -176,10 +192,10 @@ app.listen(3000);
 
 ### For API Clients
 
-Make paid API requests with the MeterClient:
+Make paid API requests with the MetarClient:
 
 ```typescript
-import { MeterClient, createNodeWallet } from "@meter/meter-client";
+import { MetarClient, createNodeWallet } from "@metar/metar-client";
 import { Connection, Keypair } from "@solana/web3.js";
 
 // Setup
@@ -188,7 +204,7 @@ const keypair = Keypair.generate();
 const wallet = createNodeWallet(keypair);
 
 // Create client
-const client = new MeterClient({
+const client = new MetarClient({
   providerBaseURL: "https://api.example.com",
   agentKeyId: "my-agent-key",
   agentPrivateKey: keypair.secretKey,  // Ed25519 key for TAP
@@ -217,7 +233,7 @@ cd packages/examples
 npm run demo:provider
 
 # Terminal 2: Run demo client
-npm run demo:client -- --text "Text to summarize"
+cd packages/examples && npm run demo:client -- --provider http://localhost:3000 --text "Text to summarize"
 ```
 
 The demo shows the complete payment flow including:
@@ -238,7 +254,7 @@ For detailed documentation, see [packages/examples/README.md](packages/examples/
 npm run build
 
 # Build specific package
-cd packages/meter-client
+cd packages/metar-client
 npm run build
 
 # Watch mode for development
@@ -383,7 +399,6 @@ All payment-related errors return **402 Payment Required**:
 - ✅ Usage tracking with SQLite
 - ✅ Dashboard with analytics
 - ✅ E2E integration tests
-- ✅ Alignment verification (see [hackathon/alignment-verification-report.md](hackathon/alignment-verification-report.md))
 
 ## Package Details
 
@@ -411,12 +426,11 @@ packages/<package-name>/
 
 ## Resources
 
-- **Technical Specifications**: [hackathon/technical-specifications.md](hackathon/technical-specifications.md)
-- **Alignment Verification**: [hackathon/alignment-verification-report.md](hackathon/alignment-verification-report.md)
+- **Technical Overview**: [TECHNICAL_OVERVIEW.md](./TECHNICAL_OVERVIEW.md)
+- **Quick Start Guide**: [QUICKSTART.md](./QUICKSTART.md)
 - **Examples Documentation**: [packages/examples/README.md](packages/examples/README.md)
 - **Trusted Agent Protocol**: [Visa TAP Specification](https://github.com/visa/trusted-agent-protocol)
 
 ## License
 
 See LICENSE file for details.
-

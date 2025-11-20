@@ -18,7 +18,7 @@ function App() {
   return (
     <div className="app">
       <header>
-        <h1>Meter Dashboard</h1>
+        <h1>Metar Dashboard</h1>
         <p>Usage metrics and analytics</p>
       </header>
       <main>
@@ -45,4 +45,3 @@ function App() {
 }
 
 export default App;
-

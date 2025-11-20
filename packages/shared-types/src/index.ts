@@ -1,19 +1,19 @@
 /**
  * Shared TypeScript types and interfaces for the x402 protocol implementation.
- * 
+ *
  * These types define the structure of HTTP headers, payment payloads, transaction formats,
- * and API contracts used throughout the Meter SDK project.
- * 
+ * and API contracts used throughout the Metar SDK project.
+ *
  * @see {@link https://github.com/visa/trusted-agent-protocol | Trusted Agent Protocol}
  * @see {@link file://hackathon/technical-specifications.md | Technical Specifications}
  */
 
 /**
  * Price lookup response structure.
- * 
+ *
  * Returned by the price endpoint (GET /.meter/price) to provide payment pricing
  * information for a specific route.
- * 
+ *
  * @see {@link file://hackathon/technical-specifications.md#price-lookup-response | Technical Specifications: Price Lookup Response}
  */
 export interface PriceResponse {
@@ -37,11 +37,11 @@ export interface PriceResponse {
 
 /**
  * Payment headers sent by client after payment.
- * 
+ *
  * These headers are included in requests to protected endpoints after a payment
  * transaction has been completed. They provide proof of payment and agent
  * authentication via TAP signature.
- * 
+ *
  * @see {@link file://hackathon/technical-specifications.md#client-request-headers | Technical Specifications: Client Request Headers}
  */
 export interface PaymentHeaders {
@@ -63,10 +63,10 @@ export interface PaymentHeaders {
 
 /**
  * HTTP 402 Payment Required response structure.
- * 
+ *
  * Standard response format for endpoints that require payment before access.
  * Includes payment details and optional guidance messages.
- * 
+ *
  * @see {@link file://hackathon/technical-specifications.md#402-payment-required | Technical Specifications: 402 Payment Required}
  */
 export interface PaymentRequiredResponse {
@@ -92,11 +92,11 @@ export interface PaymentRequiredResponse {
 
 /**
  * Usage record tracking payment transactions.
- * 
+ *
  * Records payment transactions and their consumption status for accounting
  * and audit purposes. Used by providers to track authorized payments and
  * prevent double-spending.
- * 
+ *
  * @see {@link file://hackathon/technical-specifications.md#usagerecord | Technical Specifications: UsageRecord}
  */
 export interface UsageRecord {
@@ -124,11 +124,11 @@ export interface UsageRecord {
 
 /**
  * Agent key for Trusted Agent Protocol (TAP) authentication.
- * 
+ *
  * Represents an agent's public key used for signing requests according to
  * the Trusted Agent Protocol specification. Agents use these keys to
  * authenticate payment requests.
- * 
+ *
  * @see {@link file://hackathon/technical-specifications.md#agentkey | Technical Specifications: AgentKey}
  * @see {@link https://github.com/visa/trusted-agent-protocol | Trusted Agent Protocol}
  */
@@ -154,10 +154,10 @@ export interface AgentKey {
 
 /**
  * Nonce record for replay protection.
- * 
+ *
  * Tracks nonces used in payment requests to prevent replay attacks.
  * Each nonce must be unique per agent key and can only be consumed once.
- * 
+ *
  * @see {@link file://hackathon/technical-specifications.md#noncerecord | Technical Specifications: NonceRecord}
  */
 export interface NonceRecord {
@@ -173,10 +173,10 @@ export interface NonceRecord {
 
 /**
  * Payment memo structure for Solana transactions.
- * 
+ *
  * Payment metadata included in Solana transaction memos to link payments
  * to specific routes and requests. Can be JSON string or base64-encoded.
- * 
+ *
  * @see {@link file://hackathon/technical-specifications.md#memo-structure | Technical Specifications: Memo Structure}
  */
 export interface PaymentMemo {

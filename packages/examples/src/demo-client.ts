@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 /**
  * Demo Client Script
- * 
+ *
  * This script demonstrates the x402 payment flow:
  * 1. Price lookup
  * 2. Payment execution
  * 3. API call with payment proof
  * 4. Result display
- * 
+ *
  * Usage:
  *   npm run demo:client -- --provider http://localhost:3000 --text "Your text to summarize"
  */
 
 import { Connection, Keypair } from "@solana/web3.js";
-import { MeterClient, createNodeWallet, getPrice } from "@meter/meter-client";
-import { createConnection, getUSDCMint } from "@meter/shared-config";
+import { MetarClient, createNodeWallet, getPrice } from "@metar/metar-client";
+import { createConnection, getUSDCMint } from "@metar/shared-config";
 
 interface DemoOptions {
   providerUrl: string;
@@ -24,12 +24,7 @@ interface DemoOptions {
 }
 
 async function runDemo(options: DemoOptions): Promise<void> {
-  const {
-    providerUrl,
-    text,
-    agentKeyId = "demo-agent-1",
-    network = "devnet",
-  } = options;
+  const { providerUrl, text, agentKeyId = "demo-agent-1", network = "devnet" } = options;
 
   console.log("🚀 x402 Demo Client");
   console.log("==================\n");
@@ -59,7 +54,7 @@ async function runDemo(options: DemoOptions): Promise<void> {
   // Step 1: Price Lookup
   console.log("💰 Step 1: Price Lookup");
   console.log("   Fetching price for route 'summarize:v1'...");
-  
+
   let priceInfo;
   try {
     priceInfo = await getPrice(providerUrl, "summarize:v1");
@@ -80,10 +75,14 @@ async function runDemo(options: DemoOptions): Promise<void> {
     const balance = await connection.getBalance(keypair.publicKey);
     const solBalance = balance / 1e9;
     console.log(`   SOL Balance: ${solBalance.toFixed(4)} SOL`);
-    
+
     if (solBalance < 0.01) {
-      console.log("   ⚠️  Warning: Low SOL balance. You may need to airdrop SOL for transaction fees.");
-      console.log(`   💡 Run: solana airdrop 1 ${keypair.publicKey.toBase58()} --url ${network === "devnet" ? "devnet" : "mainnet-beta"}\n`);
+      console.log(
+        "   ⚠️  Warning: Low SOL balance. You may need to airdrop SOL for transaction fees."
+      );
+      console.log(
+        `   💡 Run: solana airdrop 1 ${keypair.publicKey.toBase58()} --url ${network === "devnet" ? "devnet" : "mainnet-beta"}\n`
+      );
     } else {
       console.log("   ✅ Sufficient SOL for transaction fees\n");
     }
@@ -91,9 +90,9 @@ async function runDemo(options: DemoOptions): Promise<void> {
     console.log("   ⚠️  Could not check balance:", error);
   }
 
-  // Step 3: Create MeterClient
-  console.log("🔧 Step 3: Creating MeterClient");
-  const client = new MeterClient({
+  // Step 3: Create MetarClient
+  console.log("🔧 Step 3: Creating MetarClient");
+  const client = new MetarClient({
     providerBaseURL: providerUrl,
     agentKeyId,
     agentPrivateKey: keypair.secretKey,
@@ -101,12 +100,12 @@ async function runDemo(options: DemoOptions): Promise<void> {
     connection,
     chain: network === "devnet" ? "solana-devnet" : "solana",
   });
-  console.log("   ✅ MeterClient created\n");
+  console.log("   ✅ MetarClient created\n");
 
   // Step 4: Register agent with provider (for demo)
   console.log("🔐 Step 4: Registering Agent");
   console.log(`   Registering agent '${agentKeyId}' with provider...`);
-  
+
   try {
     const publicKeyBase64 = Buffer.from(keypair.publicKey.toBuffer()).toString("base64");
     const registerResponse = await fetch(`${providerUrl}/.meter/register-agent`, {
@@ -151,7 +150,7 @@ async function runDemo(options: DemoOptions): Promise<void> {
     }
 
     const result = await response.json();
-    
+
     console.log("   ✅ API Request Successful!");
     console.log(`   Status: ${response.status} ${response.statusText}\n`);
 
@@ -160,7 +159,6 @@ async function runDemo(options: DemoOptions): Promise<void> {
     console.log("==================\n");
     console.log(JSON.stringify(result, null, 2));
     console.log("\n✅ Demo completed successfully!");
-
   } catch (error) {
     console.error("\n❌ Error during API request:");
     if (error instanceof Error) {
@@ -224,11 +222,10 @@ Example:
 // Run demo if executed directly
 if (require.main === module) {
   const options = parseArgs();
-  runDemo(options).catch((error) => {
+  runDemo(options).catch(error => {
     console.error("\n💥 Demo failed:", error);
     process.exit(1);
   });
 }
 
 export { runDemo };
-

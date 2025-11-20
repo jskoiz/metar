@@ -1,9 +1,9 @@
 /**
  * Unit tests for dashboard backend API endpoints.
- * 
+ *
  * Tests the Express API endpoints for usage records and statistics.
  * Uses an in-memory SQLite database for testing.
- * 
+ *
  * @see {@link file://hackathon/technical-specifications.md | Technical Specifications}
  */
 
@@ -12,7 +12,7 @@ import assert from "node:assert";
 import { Database } from "sqlite3";
 import { randomUUID } from "crypto";
 import { app, db, initializeDatabase } from "./server.js";
-import { UsageRecord } from "@meter/shared-types";
+import { UsageRecord } from "@metar/shared-types";
 import { Server } from "http";
 
 // Helper function to create a test usage record
@@ -50,7 +50,7 @@ function insertUsageRecord(db: Database, record: UsageRecord): Promise<void> {
         record.reqHash || null,
         record.agentKeyId || null,
       ],
-      (err) => {
+      err => {
         if (err) reject(err);
         else resolve();
       }
@@ -88,9 +88,9 @@ let serverPort: number;
 test.before(async () => {
   // Initialize database
   await initializeDatabase(db);
-  
+
   serverPort = 3002; // Use different port to avoid conflicts
-  return new Promise<void>((resolve) => {
+  return new Promise<void>(resolve => {
     server = app.listen(serverPort, () => {
       resolve();
     });
@@ -99,7 +99,7 @@ test.before(async () => {
 
 // Teardown: Close server after tests
 test.after(async () => {
-  return new Promise<void>((resolve) => {
+  return new Promise<void>(resolve => {
     server.close(() => {
       db.close(() => resolve());
     });
@@ -109,7 +109,7 @@ test.after(async () => {
 // Cleanup: Clear database before each test
 test.beforeEach(async () => {
   return new Promise<void>((resolve, reject) => {
-    db.run("DELETE FROM usage_records", (err) => {
+    db.run("DELETE FROM usage_records", err => {
       if (err) reject(err);
       else resolve();
     });
@@ -150,7 +150,7 @@ test("GET /api/usage - returns usage records", async () => {
   assert.strictEqual(response.status, 200);
   assert.strictEqual(response.body.data.length, 2);
   assert.strictEqual(response.body.pagination.total, 2);
-  
+
   // Should be ordered by timestamp DESC (newest first)
   assert.strictEqual(response.body.data[0].id, record2.id);
   assert.strictEqual(response.body.data[1].id, record1.id);
@@ -351,16 +351,12 @@ test("GET /api/stats - returns aggregate statistics", async () => {
   assert.ok(Array.isArray(response.body.dailyVolume));
 
   // Check usage by route
-  const summarizeRoute = response.body.usageByRoute.find(
-    (r: any) => r.routeId === "summarize:v1"
-  );
+  const summarizeRoute = response.body.usageByRoute.find((r: any) => r.routeId === "summarize:v1");
   assert.ok(summarizeRoute);
   assert.strictEqual(summarizeRoute.count, 2);
   assert.strictEqual(summarizeRoute.revenue, 0.06);
 
-  const translateRoute = response.body.usageByRoute.find(
-    (r: any) => r.routeId === "translate:v1"
-  );
+  const translateRoute = response.body.usageByRoute.find((r: any) => r.routeId === "translate:v1");
   assert.ok(translateRoute);
   assert.strictEqual(translateRoute.count, 1);
   assert.strictEqual(translateRoute.revenue, 0.05);
@@ -387,7 +383,7 @@ test("GET /api/stats - dailyVolume filters last 30 days", async () => {
     createTestUsageRecord({
       timestamp: thirtyOneDaysAgo,
       status: "consumed",
-      amount: 0.10,
+      amount: 0.1,
     })
   );
   await insertUsageRecord(
@@ -409,7 +405,7 @@ test("GET /api/stats - dailyVolume filters last 30 days", async () => {
 
   const response = await request("GET", "/api/stats");
   assert.strictEqual(response.status, 200);
-  
+
   // Should only include records from last 30 days
   const totalInRange = response.body.dailyVolume.reduce(
     (sum: number, day: any) => sum + day.count,
@@ -417,4 +413,3 @@ test("GET /api/stats - dailyVolume filters last 30 days", async () => {
   );
   assert.strictEqual(totalInRange, 2); // Only 20 and 10 days ago, not 31 days ago
 });
-

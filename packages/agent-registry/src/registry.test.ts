@@ -1,12 +1,12 @@
 /**
  * Unit tests for agent key registry functionality.
- * 
+ *
  * Tests agent key lookup, addition, removal, and listing operations.
  */
 
 import { test } from "node:test";
 import assert from "node:assert";
-import { AgentKey } from "@meter/shared-types";
+import { AgentKey } from "@metar/shared-types";
 import {
   lookupAgentKey,
   addAgentKey,
@@ -121,7 +121,7 @@ test("listAgentKeys - returns all registered keys", () => {
   const keys = listAgentKeys();
   assert.strictEqual(keys.length >= 2, true);
 
-  const keyIds = keys.map((k) => k.keyId);
+  const keyIds = keys.map(k => k.keyId);
   assert.strictEqual(keyIds.includes("test_key_5"), true);
   assert.strictEqual(keyIds.includes("test_key_6"), true);
 
@@ -137,9 +137,9 @@ test("listAgentKeys - includes test agent key", () => {
     publicKey: "7xKXtg2CZ3Qz4qKzJqKzJqKzJqKzJqKzJqKzJqKzJqKz",
     algorithm: "ed25519",
   });
-  
+
   const keys = listAgentKeys();
-  const testAgentKey = keys.find((k) => k.keyId === "test_agent_1");
+  const testAgentKey = keys.find(k => k.keyId === "test_agent_1");
   assert.notStrictEqual(testAgentKey, undefined);
   assert.strictEqual(testAgentKey?.keyId, "test_agent_1");
 });
@@ -156,7 +156,7 @@ test("clearAgentKeys - removes all keys", () => {
 
   const keys = listAgentKeys();
   // Should only have the test_agent_1 that gets added on module load
-  const testKey7 = keys.find((k) => k.keyId === "test_key_7");
+  const testKey7 = keys.find(k => k.keyId === "test_key_7");
   assert.strictEqual(testKey7, undefined);
 });
 
@@ -185,4 +185,3 @@ test("lookupAgentKey - handles agent key with metadata", async () => {
   // Cleanup
   removeAgentKey("test_key_8");
 });
-

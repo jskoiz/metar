@@ -1,10 +1,11 @@
 # x402 Demo Examples
 
-This package contains demo implementations showing how to use the x402 payment protocol with the Meter SDK.
+This package contains demo implementations showing how to use the x402 payment protocol with the Metar SDK.
 
 ## Overview
 
 The demo includes:
+
 1. **Demo Client** - A Node.js script demonstrating the complete payment flow
 2. **Demo Provider** - An Express server with a protected API endpoint
 
@@ -17,11 +18,13 @@ The demo includes:
 ## Setup
 
 1. **Install dependencies** (from the monorepo root):
+
    ```bash
    npm install
    ```
 
 2. **Build all packages**:
+
    ```bash
    npm run build
    ```
@@ -43,11 +46,13 @@ npm run demo:provider
 ```
 
 This will start an Express server on `http://localhost:3000` with:
+
 - `GET /.meter/price?route=summarize:v1` - Price lookup endpoint
 - `POST /api/summarize` - Protected summarize endpoint (requires payment)
 - `GET /health` - Health check endpoint
 
 The server will display:
+
 - Provider wallet address (where payments are sent)
 - Network configuration
 - Available endpoints
@@ -65,12 +70,13 @@ npm run demo:client -- --provider http://localhost:3000 --text "Your text to sum
 ```
 
 The client will:
+
 1. ✅ Connect to Solana devnet
 2. ✅ Generate a wallet and display public keys
 3. ✅ Look up the price for the route
 4. ✅ Check wallet balance
 5. ✅ Register agent with provider
-6. ✅ Create a MeterClient instance
+6. ✅ Create a MetarClient instance
 7. ✅ Make a paid API request (payment happens automatically)
 8. ✅ Display the results
 
@@ -137,8 +143,8 @@ Options:
    SOL Balance: 1.0000 SOL
    ✅ Sufficient SOL for transaction fees
 
-🔧 Step 3: Creating MeterClient
-   ✅ MeterClient created
+🔧 Step 3: Creating MetarClient
+   ✅ MetarClient created
 
 🔐 Step 4: Registering Agent
    Registering agent 'demo-agent-1' with provider...
@@ -196,6 +202,7 @@ Options:
 ### "Insufficient balance" error
 
 If you see an insufficient balance error:
+
 1. Make sure you have SOL in your wallet for transaction fees
 2. On devnet, airdrop SOL: `solana airdrop 1 <YOUR_PUBLIC_KEY> --url devnet`
 3. Note: You'll also need USDC tokens for the payment itself. On devnet, you may need to use a faucet or mint tokens if you have mint authority.
@@ -203,6 +210,7 @@ If you see an insufficient balance error:
 ### "Payment verification failed" error
 
 This usually means:
+
 1. The transaction hasn't been confirmed yet (wait a few seconds and retry)
 2. The transaction signature is invalid
 3. The payment amount doesn't match the required price
@@ -210,11 +218,13 @@ This usually means:
 ### "Invalid agent signature" error
 
 This usually means:
+
 1. The agent wasn't registered successfully (check the registration step in client output)
 2. The public key format is incorrect
 3. The agent key ID doesn't match
 
 The demo client should automatically register itself, but if it fails, you can manually register:
+
 ```bash
 curl -X POST http://localhost:3000/.meter/register-agent \
   -H "Content-Type: application/json" \
@@ -224,6 +234,7 @@ curl -X POST http://localhost:3000/.meter/register-agent \
 ### Connection errors
 
 If you can't connect to Solana:
+
 1. Check your internet connection
 2. Try using a different RPC endpoint (set `SOLANA_DEVNET_RPC_URL` environment variable)
 3. Verify the network setting matches between client and provider
@@ -231,6 +242,7 @@ If you can't connect to Solana:
 ## Testing on Devnet
 
 The demo is configured to use Solana devnet by default. This is perfect for testing because:
+
 - Transactions are free (no real money)
 - You can airdrop SOL for testing
 - Fast confirmation times
@@ -238,6 +250,7 @@ The demo is configured to use Solana devnet by default. This is perfect for test
 To test on devnet:
 
 1. **Airdrop SOL** (if needed):
+
    ```bash
    solana airdrop 1 <YOUR_PUBLIC_KEY> --url devnet
    ```
@@ -263,7 +276,7 @@ To test on devnet:
 
 ### Key Components
 
-- **MeterClient**: High-level client SDK for making paid requests
+- **MetarClient**: High-level client SDK for making paid requests
 - **createX402Middleware**: Express middleware for protecting routes
 - **Agent Registry**: Simple in-memory registry for demo (production would use a real registry)
 
@@ -280,4 +293,3 @@ To test on devnet:
 - [x402 Protocol Overview](../../research/x402-protocol-overview.md)
 - [Client SDK Patterns](../../research/x402-client-sdk-patterns.md)
 - [Provider Middleware Patterns](../../research/x402-provider-middleware-patterns.md)
-
