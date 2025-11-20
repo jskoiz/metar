@@ -2,10 +2,32 @@
 
 **Pay-Per-Call SDK for the x402 Protocol**
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Metar is a complete SDK that enables pay-per-call APIs using the x402 payment protocol on Solana. It provides one-line middleware for providers and automatic payment orchestration for clients, eliminating the need for complex billing infrastructure.
 
-**📖 [Technical Overview](./TECHNICAL_OVERVIEW.md)** - Quick technical overview for hackathon judges  
-**🚀 [Quick Start Guide](./QUICKSTART.md)** - Step-by-step tutorial to get started
+## 🚀 Try It Now
+
+**See Metar in action in under 2 minutes:**
+
+```bash
+# Clone and install
+git clone <repository-url>
+cd 402
+npm install && npm run build
+
+# Terminal 1: Start demo provider
+cd packages/examples && npm run demo:provider
+
+# Terminal 2: Run demo client
+cd packages/examples && npm run demo:client -- --provider http://localhost:3000 --text "Hello, world!"
+```
+
+**📖 [Quick Start Guide](./QUICKSTART.md)** - Step-by-step tutorial  
+**📖 [Technical Overview](./TECHNICAL_OVERVIEW.md)** - Architecture and implementation details  
+**🤝 [Contributing](./CONTRIBUTING.md)** - How to contribute to this open source project
+
+---
 
 ## Overview
 
@@ -118,6 +140,7 @@ This monorepo uses npm workspaces and contains the following packages:
 **🚀 New to Metar?** Start with the [Quick Start Guide](./QUICKSTART.md) for a step-by-step tutorial.
 
 **⚡ Quick Demo**: See Metar in action:
+
 ```bash
 # Terminal 1: Start provider
 cd packages/examples && npm run demo:provider
@@ -166,7 +189,7 @@ const connection = createConnection("devnet");
 const agentRegistry = {
   async lookupAgentKey(keyId: string) {
     // Return AgentKey or null
-  }
+  },
 };
 
 // Protect your endpoint with payment
@@ -174,7 +197,7 @@ app.post(
   "/api/summarize",
   createX402Middleware({
     routeId: "summarize:v1",
-    price: 0.03,  // 0.03 USDC per request
+    price: 0.03, // 0.03 USDC per request
     tokenMint: getUSDCMint("devnet").toString(),
     payTo: "YOUR_WALLET_ADDRESS",
     chain: "solana-devnet",
@@ -208,7 +231,7 @@ const wallet = createNodeWallet(keypair);
 const client = new MetarClient({
   providerBaseURL: "https://api.example.com",
   agentKeyId: "my-agent-key",
-  agentPrivateKey: keypair.secretKey,  // Ed25519 key for TAP
+  agentPrivateKey: keypair.secretKey, // Ed25519 key for TAP
   wallet,
   connection,
   chain: "solana-devnet",
@@ -241,6 +264,7 @@ cd packages/examples && npm run demo:client -- --private-key <your-base58-or-bas
 ```
 
 The demo shows the complete payment flow including:
+
 - Price lookup
 - Payment transaction creation
 - TAP signature generation (separate Ed25519 keypair)
@@ -248,6 +272,7 @@ The demo shows the complete payment flow including:
 - Usage tracking
 
 **Important Notes:**
+
 - The demo generates a **separate TAP agent keypair** for signatures (not the Solana wallet key)
 - Your wallet needs **SOL for transaction fees** and **USDC balance** in an associated token account
 - Token accounts are automatically created if they don't exist
@@ -367,6 +392,7 @@ Authorization: Signature keyId="<agentKeyId>", alg="ed25519", headers="(request-
 ```
 
 Signature base string:
+
 ```
 (request-target): post /api/summarize
 date: Wed, 12 Nov 2025 12:00:00 GMT
@@ -401,6 +427,7 @@ All payment-related errors return **402 Payment Required**:
 ## Project Status
 
 ✅ **Production Ready** - Core features complete and tested:
+
 - ✅ Client SDK with full payment flow
 - ✅ Provider middleware with comprehensive verification
 - ✅ TAP signature generation and verification
