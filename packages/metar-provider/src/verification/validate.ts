@@ -46,5 +46,16 @@ export async function checkNonce(
   agentKeyId: string,
   store: NonceStore = defaultNonceStore
 ): Promise<boolean> {
+  // Warn if using in-memory store in production
+  if (
+    process.env.NODE_ENV === "production" &&
+    store instanceof InMemoryNonceStore
+  ) {
+    console.warn(
+      "SECURITY WARNING: Using InMemoryNonceStore in production. " +
+      "Nonces will be lost on restart, allowing replay attacks. " +
+      "Use FileNonceStore or a persistent database instead."
+    );
+  }
   return store.checkAndConsume(nonce, agentKeyId);
 }

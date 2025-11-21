@@ -109,9 +109,4 @@ export function clearAgentKeys(): void {
   agentKeys.clear();
 }
 
-// Add test agent key
-addAgentKey({
-  keyId: "test_agent_1",
-  publicKey: "7xKXtg2CZ3Qz4qKzJqKzJqKzJqKzJqKzJqKzJqKzJqKz", // Example, use real key
-  algorithm: "ed25519",
-});
+
