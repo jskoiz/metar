@@ -16,6 +16,12 @@ export const SOLANA_NETWORKS = {
 
 export const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
 
+/**
+ * Default timestamp validity window in milliseconds (5 minutes).
+ * Requests older than this window will be rejected.
+ */
+export const TIMESTAMP_WINDOW_MS = 5 * 60 * 1000;
+
 export function createConnection(network: "devnet" | "mainnet" = "devnet"): Connection {
   return new Connection(SOLANA_NETWORKS[network].rpcUrl, "confirmed");
 }

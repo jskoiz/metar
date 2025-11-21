@@ -60,17 +60,20 @@ packages/<package-name>/
 ### Getting Started
 
 1. **Clone the repository**:
+
    ```bash
    git clone <repository-url>
    cd 402
    ```
 
 2. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 3. **Build all packages**:
+
    ```bash
    npm run build
    ```
@@ -85,6 +88,7 @@ packages/<package-name>/
 ### Making Changes
 
 1. **Create a feature branch**:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -95,21 +99,23 @@ packages/<package-name>/
    - Update documentation as needed
 
 3. **Build and test**:
+
    ```bash
    # Build all packages
    npm run build
-   
+
    # Run tests
    npm run test
-   
+
    # Run linting
    npm run lint
-   
+
    # Fix linting issues
    npm run lint:fix
    ```
 
 4. **Commit your changes**:
+
    ```bash
    git add .
    git commit -m "feat: add your feature description"
@@ -260,4 +266,3 @@ We are committed to providing a welcoming and inclusive environment. Please be r
 ---
 
 **Thank you for contributing to Metar!** 🎉
-

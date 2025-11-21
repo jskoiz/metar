@@ -6,6 +6,7 @@
  */
 
 import { NonceStore, InMemoryNonceStore } from "./NonceStore.js";
+import { TIMESTAMP_WINDOW_MS } from "@metar/shared-config";
 
 // Default store for backward compatibility
 const defaultNonceStore = new InMemoryNonceStore();
@@ -18,10 +19,10 @@ const defaultNonceStore = new InMemoryNonceStore();
  * - Not older than maxAge (default 5 minutes)
  *
  * @param timestamp - Unix timestamp in milliseconds
- * @param maxAge - Maximum age in milliseconds (default: 300000 = 5 minutes)
+ * @param maxAge - Maximum age in milliseconds (default: TIMESTAMP_WINDOW_MS)
  * @returns true if timestamp is valid, false otherwise
  */
-export function validateTimestamp(timestamp: number, maxAge: number = 300000): boolean {
+export function validateTimestamp(timestamp: number, maxAge: number = TIMESTAMP_WINDOW_MS): boolean {
   const now = Date.now();
   const age = now - timestamp;
 

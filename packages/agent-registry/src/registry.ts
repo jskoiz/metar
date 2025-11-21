@@ -1,7 +1,65 @@
 import { AgentKey } from "@metar/shared-types";
 
+import fs from "fs";
+
 // Simple in-memory store (or use JSON file/database)
 const agentKeys = new Map<string, AgentKey>();
+
+/**
+ * File-based Agent Registry.
+ * Persists agent keys to a JSON file.
+ */
+export class FileAgentRegistry {
+  private store = new Map<string, AgentKey>();
+  private readonly filePath: string;
+
+  constructor(filePath: string) {
+    this.filePath = filePath;
+    this.load();
+  }
+
+  private load() {
+    try {
+      if (fs.existsSync(this.filePath)) {
+        const data = fs.readFileSync(this.filePath, "utf-8");
+        const json = JSON.parse(data);
+        this.store = new Map(Object.entries(json));
+      }
+    } catch (error) {
+      console.error("Failed to load agent keys from file:", error);
+    }
+  }
+
+  private save() {
+    try {
+      const json = Object.fromEntries(this.store);
+      fs.writeFileSync(this.filePath, JSON.stringify(json, null, 2));
+    } catch (error) {
+      console.error("Failed to save agent keys to file:", error);
+    }
+  }
+
+  async lookupAgentKey(keyId: string): Promise<AgentKey | null> {
+    return this.store.get(keyId) || null;
+  }
+
+  addAgentKey(key: AgentKey): void {
+    this.store.set(key.keyId, key);
+    this.save();
+  }
+
+  removeAgentKey(keyId: string): boolean {
+    const deleted = this.store.delete(keyId);
+    if (deleted) {
+      this.save();
+    }
+    return deleted;
+  }
+
+  listAgentKeys(): AgentKey[] {
+    return Array.from(this.store.values());
+  }
+}
 
 /**
  * Looks up an agent key by its key ID.
@@ -18,6 +76,7 @@ export async function lookupAgentKey(keyId: string): Promise<AgentKey | null> {
  * Adds an agent key to the registry.
  *
  * @param key - The agent key to add
+ * @returns void
  */
 export function addAgentKey(key: AgentKey): void {
   agentKeys.set(key.keyId, key);

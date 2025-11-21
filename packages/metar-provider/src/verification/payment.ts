@@ -8,7 +8,7 @@
  */
 
 import { Connection, PublicKey, ParsedTransactionWithMeta } from "@solana/web3.js";
-import { getAssociatedTokenAddressSync } from "@solana/spl-token";
+import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
 import { PaymentHeaders } from "@metar/shared-types";
 
 /**
@@ -95,8 +95,12 @@ export async function verifyPayment(
       };
     }
 
+    // Get mint decimals
+    const mintInfo = await getMint(connection, expectedMint);
+    const decimals = mintInfo.decimals;
+
     // Verify amount (convert expected amount to smallest unit)
-    const expectedAmountSmallestUnit = Math.floor(expectedAmount * Math.pow(10, 6)); // USDC has 6 decimals
+    const expectedAmountSmallestUnit = Math.floor(expectedAmount * Math.pow(10, decimals));
     if (transfer.amount < expectedAmountSmallestUnit) {
       return {
         success: false,
@@ -171,6 +175,15 @@ function findTokenTransfer(
         if (destination.equals(recipientATA)) {
           return {
             amount: parseInt(info.amount),
+            payer: new PublicKey(info.authority),
+          };
+        }
+      } else if (parsed.type === "transferChecked") {
+        const info = parsed.info;
+        const destination = new PublicKey(info.destination);
+        if (destination.equals(recipientATA)) {
+          return {
+            amount: parseInt(info.tokenAmount.amount),
             payer: new PublicKey(info.authority),
           };
         }

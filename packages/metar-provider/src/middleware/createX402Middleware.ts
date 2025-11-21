@@ -46,7 +46,9 @@ export async function verifyPaymentViaFacilitator(
   facilitatorUrl: string,
   txSig: string,
   routeId: string,
-  amount: number
+  amount: number,
+  payTo: string,
+  tokenMint: string
 ): Promise<boolean> {
   try {
     const url = `${facilitatorUrl.replace(/\/$/, "")}/verify`;
@@ -59,6 +61,8 @@ export async function verifyPaymentViaFacilitator(
         txSig,
         routeId,
         amount,
+        payTo,
+        tokenMint,
       }),
       // Set a reasonable timeout (5 seconds)
       signal: AbortSignal.timeout(5000),
@@ -270,7 +274,9 @@ export function createX402Middleware(options: MiddlewareOptions) {
           options.facilitatorUrl,
           paymentHeaders.txSig,
           paymentHeaders.routeId,
-          paymentHeaders.amount
+          paymentHeaders.amount,
+          routeConfig.payTo,
+          routeConfig.tokenMint
         );
         paymentResult = { success: verified };
 
