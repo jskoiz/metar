@@ -6,6 +6,8 @@
 
 Metar is a complete SDK that enables pay-per-call APIs using the x402 payment protocol on Solana. It provides one-line middleware for providers and automatic payment orchestration for clients, eliminating the need for complex billing infrastructure.
 
+![Metar Hero Image](./assets/metar-hero.png)
+
 ## 🚀 Try It Now
 
 **See Metar in action in under 2 minutes:**
@@ -23,6 +25,7 @@ cd packages/examples && npm run demo:provider
 cd packages/examples && npm run demo:client -- --provider http://localhost:3000 --text "Hello, world!"
 ```
 
+**🌐 [Website](https://metar-murex.vercel.app/)** - Official landing page and documentation
 **📖 [Quick Start Guide](./QUICKSTART.md)** - Step-by-step tutorial  
 **📖 [Technical Overview](./TECHNICAL_OVERVIEW.md)** - Architecture and implementation details  
 **🤝 [Contributing](./CONTRIBUTING.md)** - How to contribute to this open source project
@@ -462,6 +465,7 @@ packages/<package-name>/
 
 ## Resources
 
+- **Website**: [metar-murex.vercel.app](https://metar-murex.vercel.app/)
 - **Technical Overview**: [TECHNICAL_OVERVIEW.md](./TECHNICAL_OVERVIEW.md)
 - **Quick Start Guide**: [QUICKSTART.md](./QUICKSTART.md)
 - **Examples Documentation**: [packages/examples/README.md](packages/examples/README.md)
