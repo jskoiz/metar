@@ -436,7 +436,7 @@ app.post(
     price: 0.03,
     // ... other options
     facilitatorMode: true,
-    facilitatorUrl: "https://facilitator.example.com",
+    facilitatorUrl: "https://x402.org/facilitator",
   }),
   handler
 );
