@@ -1,0 +1,109 @@
+{
+  "schema": "metar-trust/v1",
+  "service": {
+    "name": "Metar — X Data API",
+    "tagline": "Pay-per-call X (Twitter) data for AI agents and autonomous systems",
+    "version": "1.0.0",
+    "base_url": "https://metar.api",
+    "status_url": "https://metar.api/api/info",
+    "contact": "https://metar.api"
+  },
+  "protocol": {
+    "name": "x402",
+    "version": "1.0",
+    "spec": "https://github.com/coinbase/x402",
+    "payment_required_status": 402,
+    "price_endpoint": "/.meter/price",
+    "tap_enabled": true,
+    "tap_algorithm": "ed25519",
+    "tap_spec": "https://github.com/visa/trusted-agent-protocol"
+  },
+  "chains": [
+    {
+      "id": "solana",
+      "name": "Solana Mainnet",
+      "network": "mainnet-beta",
+      "currency": "USDC",
+      "token_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "rpc": "https://api.mainnet-beta.solana.com",
+      "package": "@metar/metar-client",
+      "auth": "x402-tap"
+    },
+    {
+      "id": "solana-devnet",
+      "name": "Solana Devnet",
+      "network": "devnet",
+      "currency": "USDC",
+      "token_mint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+      "rpc": "https://api.devnet.solana.com",
+      "package": "@metar/metar-client",
+      "auth": "x402-tap",
+      "note": "Use for development and testing"
+    },
+    {
+      "id": "base",
+      "name": "Base Mainnet",
+      "chain_id": 8453,
+      "currency": "USDC",
+      "token_address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "package": "x402-fetch",
+      "auth": "x402-fetch"
+    },
+    {
+      "id": "ethereum",
+      "name": "Ethereum Mainnet",
+      "chain_id": 1,
+      "currency": "USDC",
+      "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "package": "x402-fetch",
+      "auth": "x402-fetch"
+    }
+  ],
+  "artifacts": {
+    "skill": "https://metar.api/api/skill/SKILL.md",
+    "install": "https://metar.api/api/skill/install.sh",
+    "trust": "https://metar.api/api/trust",
+    "trust_well_known": "https://metar.api/.well-known/trust.json",
+    "pricing": "https://metar.api/api/pricing",
+    "pricing_md": "https://metar.api/api/skill/PRICING.md",
+    "info": "https://metar.api/api/info"
+  },
+  "capabilities": [
+    "tweet:lookup",
+    "tweet:batch",
+    "tweet:search:recent",
+    "tweet:search:all",
+    "tweet:thread",
+    "tweet:replies",
+    "tweet:quotes",
+    "tweet:retweets",
+    "tweet:likers",
+    "user:lookup",
+    "user:lookup:id",
+    "user:batch",
+    "user:timeline",
+    "user:mentions",
+    "user:followers",
+    "user:following",
+    "user:liked",
+    "list:tweets",
+    "list:members",
+    "list:lookup",
+    "trends:lookup",
+    "spaces:search"
+  ],
+  "installation": {
+    "quick": "curl -fsSL https://metar.api/api/skill/install.sh | bash",
+    "npm_solana": "npm install @metar/metar-client",
+    "npm_evm": "npm install x402-fetch viem"
+  },
+  "security": {
+    "replay_protection": true,
+    "nonce_ttl_minutes": 5,
+    "timestamp_max_age_minutes": 5,
+    "on_chain_verification": true,
+    "tap_signatures": true
+  },
+  "generated_at": "2026-02-24T00:00:00Z",
+  "note": "Domain placeholder — actual domain set at deploy time"
+}
